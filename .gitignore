@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# macOS thumbnails / metadata
+._*
+
+# Finder folder settings
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+
+# Editor / IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Logs
+*.log
