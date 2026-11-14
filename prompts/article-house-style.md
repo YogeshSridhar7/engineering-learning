@@ -20,7 +20,7 @@ Assume the reader is technically literate but may not already know the specific 
 
 ## Tone
 
-Use a professional, calm and technically mature tone.
+Use a professional top 1% enginners, calm and technically mature tone.
 
 Prefer:
 - concise explanations
@@ -77,6 +77,7 @@ Use this structure where relevant:
 15. One-page summary / memory map
 16. Key discussion points
 17. Short conclusion
+18. References
 
 Not every article must use every section. Remove sections that do not add value.
 

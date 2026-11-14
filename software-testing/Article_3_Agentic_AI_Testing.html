@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic AI Testing — Evaluating Autonomous AI Systems Beyond the Final Answer</title>
+<style>
+:root{
+  --paper:#f4f2ec;
+  --surface:#fbfaf7;
+  --ink:#22251f;
+  --muted:#666a63;
+  --line:#d9d6cf;
+  --line-strong:#c7c3ba;
+  --accent:#3d4a43;
+  --accent-soft:#e9ece8;
+  --accent-deep:#2f3833;
+  --code:#272b28;
+  --table-head:#ece9e2;
+  --shadow:0 10px 28px rgba(35,39,34,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:Georgia,"Times New Roman",serif;font-size:17px;line-height:1.72;
+}
+.container{width:min(100%,1180px);margin:0 auto;padding:42px 28px 88px}
+.hero{
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;
+  padding:52px 58px 46px;box-shadow:var(--shadow);
+}
+.eyebrow{
+  font-family:Arial,Helvetica,sans-serif;font-size:.76rem;letter-spacing:.16em;
+  text-transform:uppercase;font-weight:700;color:var(--accent);margin-bottom:18px;
+}
+h1,h2,h3{font-family:Arial,Helvetica,sans-serif;color:var(--ink);letter-spacing:-.012em}
+h1{font-size:clamp(2.25rem,4.2vw,4.1rem);line-height:1.04;font-weight:650;margin:0 0 20px;max-width:980px}
+.hero .subtitle{max-width:880px;color:#4d514c;font-size:1.08rem;margin:0}
+.meta{display:flex;gap:28px;flex-wrap:wrap;margin-top:26px;padding-top:18px;border-top:1px solid var(--line);font-family:Arial,Helvetica,sans-serif;font-size:.84rem;color:var(--muted)}
+.disclosure{margin-top:12px;color:var(--muted);font-size:.9rem;max-width:900px}
+section{
+  background:var(--surface);border:1px solid var(--line);border-radius:6px;
+  margin-top:22px;padding:34px 38px 36px;box-shadow:0 4px 14px rgba(35,39,34,.025);
+}
+section > *{max-width:930px}
+section > .table-wrap,section > .diagram,section > .grid,section > .code{max-width:none}
+h2{font-size:1.72rem;line-height:1.25;font-weight:650;margin:0 0 14px}
+h3{font-size:1.08rem;line-height:1.4;font-weight:700;margin:28px 0 10px}
+p{margin:9px 0 15px}
+.kicker{
+  font-family:Arial,Helvetica,sans-serif;color:var(--accent);font-weight:700;
+  text-transform:uppercase;letter-spacing:.12em;font-size:.74rem;margin-bottom:10px;
+}
+.small{font-size:.88rem;color:var(--muted)}
+.callout{background:#f1f0eb;border-left:3px solid var(--accent);padding:16px 18px;border-radius:2px;margin:22px 0;color:#3f433e}
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border:1px solid var(--line);background:#fdfcf9;border-radius:4px;padding:18px 20px}
+.card strong{display:block;margin-bottom:7px;font-family:Arial,Helvetica,sans-serif;font-size:.95rem;color:var(--accent-deep)}
+.table-wrap{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:.91rem;background:#fffefb}
+th,td{padding:12px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th:last-child,td:last-child{border-right:0}
+tr:last-child td{border-bottom:0}
+th{background:var(--table-head);font-family:Arial,Helvetica,sans-serif;font-weight:700;color:#30342f}
+tr:nth-child(even) td{background:#faf9f5}
+.diagram{background:#f8f7f3;border:1px solid var(--line);border-radius:4px;padding:22px;overflow:auto;margin-top:18px}
+.flow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.node{
+  background:#fffefb;border:1px solid var(--line-strong);border-radius:3px;padding:11px 13px;
+  min-width:125px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:.84rem;font-weight:650;color:#353a35;
+}
+.node.em{background:var(--accent-soft);border-color:#bcc3bd}
+.arrow{color:#777d77;font-weight:700;font-family:Arial,Helvetica,sans-serif}
+.code{
+  background:var(--code);color:#efefe9;border-radius:4px;padding:17px 18px;
+  font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:.84rem;
+  line-height:1.55;overflow:auto;white-space:pre-wrap;border:1px solid #1d211e;
+}
+.badge{
+  display:inline-block;padding:4px 8px;margin:2px 3px 2px 0;border-radius:999px;
+  background:#eeece6;border:1px solid #d5d1c8;color:#454a45;
+  font-family:Arial,Helvetica,sans-serif;font-size:.72rem;font-weight:650;
+}
+a{color:#38463f;text-decoration:none;border-bottom:1px solid #a9afa9}
+a:hover{color:#1f2924;border-bottom-color:#1f2924}
+#contents table td{width:50%;background:#fbfaf6}
+#contents a{display:block;padding:2px 0;border-bottom:0;font-family:Arial,Helvetica,sans-serif;font-size:.9rem;font-weight:600}
+blockquote{margin:20px 0;padding:2px 0 2px 20px;border-left:3px solid var(--line-strong);color:#4b504b;font-style:italic}
+.footer{text-align:center;color:var(--muted);font-size:.86rem;margin-top:30px;font-family:Arial,Helvetica,sans-serif}
+@media(max-width:880px){
+  .grid-2,.grid-3{grid-template-columns:1fr}.hero{padding:34px 28px}
+  section{padding:28px 24px}.container{padding:24px 14px 60px}
+  #contents table td{display:block;width:100%}
+}
+@media print{
+  body{background:#fff;font-size:11.5pt}.container{max-width:none;padding:0}
+  .hero,section{box-shadow:none;border-color:#bbb;break-inside:avoid}
+  a{color:#000;border:0}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <div class="eyebrow">AI Engineering · Testing & Evaluation · Article 3</div>
+  <h1>Agentic AI Testing</h1>
+  <p class="subtitle">
+    How to evaluate autonomous AI systems beyond the final answer — including planning,
+    tool use, trajectories, retrieval, state changes, regression, observability, security,
+    and production behaviour.
+  </p>
+  <div class="meta">
+    <span><strong>Author:</strong> Yogesh Sridhar</span>
+    <span><strong>Updated:</strong> November 2026</span>
+  </div>
+  <div class="disclosure">
+    <strong>Disclosure:</strong> AI-assisted for structuring, editing and presentation.
+    The ideas, learning, examples, interpretations and conclusions are the author's own.
+  </div>
+</header>
+
+<section id="abstract">
+  <div class="kicker">Abstract</div>
+  <h2>Testing an agent means testing decisions, actions and outcomes</h2>
+  <p>
+    Traditional software tests often compare a known input with a deterministic output.
+    Agentic AI introduces a more difficult problem: the system may plan, retrieve information,
+    choose tools, execute actions, observe results, revise its plan and continue until it believes
+    the task is complete.
+  </p>
+  <p>
+    A final response can look correct even when the agent took an unsafe, inefficient or incorrect
+    path. Agentic AI testing therefore evaluates both <strong>what the system produced</strong> and
+    <strong>how it reached that result</strong>.
+  </p>
+  <div class="callout">
+    <strong>Core engineering principle:</strong> do not test an AI agent only by judging its final answer.
+    Test the path it took, the tools it selected, the arguments it passed, the state it changed,
+    the evidence it used, its recovery behaviour, and the final business outcome.
+  </div>
+</section>
+
+<section id="contents">
+  <div class="kicker">Contents</div>
+  <h2>Table of Contents</h2>
+  <div class="table-wrap">
+    <table><tbody>
+      <tr><td><a href="#what-is-agentic-testing">1. What Agentic AI Testing Is</a></td><td><a href="#architecture">2. Agent Architecture</a></td></tr>
+      <tr><td><a href="#testing-stack">3. The Agentic Testing Stack</a></td><td><a href="#trajectory">4. Trajectory Evaluation</a></td></tr>
+      <tr><td><a href="#tool-testing">5. Tool & API Testing</a></td><td><a href="#rag">6. RAG & Retrieval Testing</a></td></tr>
+      <tr><td><a href="#judges">7. Deterministic Checks, LLM Judges & Humans</a></td><td><a href="#regression">8. Regression Datasets</a></td></tr>
+      <tr><td><a href="#observability">9. Tracing & Observability</a></td><td><a href="#security">10. Security & Red Teaming</a></td></tr>
+      <tr><td><a href="#metrics">11. Metrics</a></td><td><a href="#tools">12. Tool Landscape</a></td></tr>
+      <tr><td><a href="#examples">13. Worked Examples</a></td><td><a href="#failure-taxonomy">14. Failure Taxonomy</a></td></tr>
+      <tr><td><a href="#workflow">15. Practical Testing Workflow</a></td><td><a href="#memory-map">16. One-page Memory Map</a></td></tr>
+      <tr><td><a href="#discussion">17. Key Discussion Points</a></td><td><a href="#references">18. References & Further Reading</a></td></tr>
+    </tbody></table>
+  </div>
+</section>
+
+<section id="what-is-agentic-testing">
+  <div class="kicker">1 · Definition</div>
+  <h2>What is Agentic AI Testing?</h2>
+  <p>
+    Agentic AI testing evaluates systems that can make decisions and take actions on behalf of a user.
+    Unlike a simple chatbot, an agent may decompose a goal into steps, call external tools, inspect results,
+    maintain state, retry failures and decide when the task is complete.
+  </p>
+  <div class="grid grid-2">
+    <div class="card">
+      <strong>Traditional LLM evaluation</strong>
+      Input → model response → score the response.
+    </div>
+    <div class="card">
+      <strong>Agentic evaluation</strong>
+      Goal → plan → tool calls → observations → state changes → final outcome → evaluate the whole execution.
+    </div>
+  </div>
+  <h3>Example</h3>
+  <p>
+    Suppose a support agent is asked to refund an order. The final message,
+    “Your refund has been processed,” is not enough evidence of success.
+    Testing should also verify that the agent identified the correct order, authenticated the user,
+    selected the refund tool, passed the correct amount, respected refund policy, received a successful
+    backend response and changed the correct business state exactly once.
+  </p>
+</section>
+
+<section id="architecture">
+  <div class="kicker">2 · Architecture</div>
+  <h2>Where failures can occur</h2>
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">User Goal</div><div class="arrow">→</div>
+      <div class="node">Agent / Planner</div><div class="arrow">→</div>
+      <div class="node">Memory / Context</div><div class="arrow">→</div>
+      <div class="node">Tool Selection</div><div class="arrow">→</div>
+      <div class="node em">Tool / API / MCP</div><div class="arrow">→</div>
+      <div class="node">External System</div><div class="arrow">→</div>
+      <div class="node">Observation</div><div class="arrow">→</div>
+      <div class="node">Next Decision</div><div class="arrow">→</div>
+      <div class="node em">Final State</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Layer</th><th>Typical failure</th><th>Evidence to capture</th></tr></thead>
+      <tbody>
+        <tr><td>Planning</td><td>Wrong decomposition or missing required step.</td><td>Plan, trace, intermediate decisions.</td></tr>
+        <tr><td>Context / memory</td><td>Uses stale or cross-session information.</td><td>Session state, retrieved memories, IDs.</td></tr>
+        <tr><td>Tool selection</td><td>Chooses the wrong capability.</td><td>Tool name and selection rationale/trace metadata.</td></tr>
+        <tr><td>Arguments</td><td>Right tool, wrong parameters.</td><td>Structured request payload.</td></tr>
+        <tr><td>External system</td><td>API fails or returns unexpected data.</td><td>Status, response body, latency, retry trace.</td></tr>
+        <tr><td>Recovery</td><td>Loops, retries unsafely, or abandons too early.</td><td>Ordered trajectory and retry count.</td></tr>
+        <tr><td>Final state</td><td>Agent says success but business state is wrong.</td><td>Database / system-of-record verification.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="testing-stack">
+  <div class="kicker">3 · Testing Stack</div>
+  <h2>Ten layers of agentic testing</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Layer</th><th>What it tests</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1. Deterministic software tests</strong></td><td>Functions, schemas, API contracts, permissions.</td><td>Refund amount must be numeric and ≤ approved limit.</td></tr>
+        <tr><td><strong>2. End-to-end task evaluation</strong></td><td>Whether the requested goal was completed.</td><td>Refund is actually recorded in the payment system.</td></tr>
+        <tr><td><strong>3. Planning evaluation</strong></td><td>Quality and completeness of the chosen plan.</td><td>Authenticate → find order → check policy → refund.</td></tr>
+        <tr><td><strong>4. Tool-use evaluation</strong></td><td>Tool choice, arguments and ordering.</td><td>No refund tool call before ownership verification.</td></tr>
+        <tr><td><strong>5. Trajectory evaluation</strong></td><td>The entire ordered sequence of actions.</td><td>Agent does not loop between search and validation.</td></tr>
+        <tr><td><strong>6. Retrieval / RAG evaluation</strong></td><td>Evidence quality and groundedness.</td><td>Uses the current refund policy, not an obsolete document.</td></tr>
+        <tr><td><strong>7. Regression testing</strong></td><td>Whether changes break previously working behaviour.</td><td>New prompt does not break cancellation workflows.</td></tr>
+        <tr><td><strong>8. Security / red teaming</strong></td><td>Abuse, injection, privilege and data risks.</td><td>User cannot instruct agent to access another customer's records.</td></tr>
+        <tr><td><strong>9. Observability testing</strong></td><td>Whether failures can be reconstructed.</td><td>Every tool call has trace ID, arguments, result and error.</td></tr>
+        <tr><td><strong>10. Production evaluation</strong></td><td>Quality on real traffic over time.</td><td>Monitor task-success degradation after a model change.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="trajectory">
+  <div class="kicker">4 · Trajectories</div>
+  <h2>The most important difference: test the path, not only the answer</h2>
+  <p>
+    A <strong>trajectory</strong> is the ordered execution path the agent takes: model calls,
+    retrievals, tool calls, observations, state transitions, retries and decisions.
+  </p>
+
+  <div class="code">User goal:
+"Refund order ORD-1042."
+
+GOOD TRAJECTORY
+1. get_current_user()
+2. get_order("ORD-1042")
+3. verify_order_owner(user_id, order.user_id)
+4. get_refund_policy(order)
+5. refund_payment(order_id="ORD-1042", amount=49.99)
+6. verify_refund_status("ORD-1042")
+7. respond with confirmed outcome
+
+BAD TRAJECTORY
+1. get_order("ORD-1042")
+2. refund_payment(order_id="ORD-1042", amount=49.99)
+3. respond "Refund completed"
+
+The final text may look correct in both cases.
+The second path skipped authentication / ownership validation.</div>
+
+  <h3>Trajectory checks</h3>
+  <div class="grid grid-3">
+    <div class="card"><strong>Correct sequence</strong>Were required steps performed in the right order?</div>
+    <div class="card"><strong>Efficiency</strong>Did the agent use unnecessary tools or repeat calls?</div>
+    <div class="card"><strong>Recovery</strong>Did it handle failures without unsafe retries or loops?</div>
+  </div>
+</section>
+
+<section id="tool-testing">
+  <div class="kicker">5 · Tool Use</div>
+  <h2>Tool and API testing is where language becomes action</h2>
+  <p>
+    Tool use is a critical boundary because an agent stops being only conversational and starts changing real systems.
+    Whenever possible, tool behaviour should be validated with deterministic assertions rather than subjective model scoring.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Test</th><th>Question</th><th>Example assertion</th></tr></thead>
+      <tbody>
+        <tr><td>Tool selection</td><td>Did it choose the correct function?</td><td><code>tool == "refund_payment"</code></td></tr>
+        <tr><td>Argument correctness</td><td>Were fields accurate?</td><td><code>order_id == "ORD-1042"</code></td></tr>
+        <tr><td>Authorization</td><td>Was the action permitted?</td><td>Refund tool rejected if order owner differs.</td></tr>
+        <tr><td>Ordering</td><td>Were prerequisites completed first?</td><td>Identity check occurs before refund.</td></tr>
+        <tr><td>Idempotency</td><td>Can retries duplicate the action?</td><td>Two retries still create one refund.</td></tr>
+        <tr><td>Failure handling</td><td>Does the agent react safely to 4xx/5xx/timeouts?</td><td>No false success after API error.</td></tr>
+        <tr><td>State verification</td><td>Did the intended system state change?</td><td>Payment record status = refunded.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="rag">
+  <div class="kicker">6 · RAG & Retrieval</div>
+  <h2>Testing the evidence an agent uses</h2>
+  <p>
+    Agents often retrieve policies, documents, records or web content before acting.
+    Retrieval quality therefore becomes part of agent quality.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Dimension</th><th>Meaning</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Retrieval relevance</td><td>Are retrieved documents relevant to the request?</td><td>Refund agent retrieves refund policy rather than delivery policy.</td></tr>
+        <tr><td>Context precision</td><td>How much retrieved context is actually useful?</td><td>Top results are mostly policy-relevant, not unrelated support content.</td></tr>
+        <tr><td>Context recall</td><td>Were the necessary facts retrieved?</td><td>Policy exception clause is not missed.</td></tr>
+        <tr><td>Groundedness</td><td>Does the output follow available evidence?</td><td>Agent does not invent a refund exception.</td></tr>
+        <tr><td>Freshness</td><td>Is the source current?</td><td>Uses policy v4 rather than archived v2.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="judges">
+  <div class="kicker">7 · Evaluation Methods</div>
+  <h2>Use the cheapest reliable judge</h2>
+  <p>
+    Not every agent behaviour needs another LLM to evaluate it. A mature evaluation strategy uses
+    deterministic checks where possible and model-based or human judgement where semantics are genuinely subjective.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Best for</th><th>Example</th><th>Main limitation</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Deterministic assertion</strong></td><td>Exact state, tools, arguments, schemas.</td><td>Required tool was called exactly once.</td><td>Cannot judge nuanced semantic quality.</td></tr>
+        <tr><td><strong>Rule / rubric</strong></td><td>Known business requirements.</td><td>Response must state refund amount and status.</td><td>Rules may become complex.</td></tr>
+        <tr><td><strong>LLM-as-a-Judge</strong></td><td>Relevance, completeness, semantic quality.</td><td>Did the explanation accurately reflect policy?</td><td>Judge variability and bias.</td></tr>
+        <tr><td><strong>Agent-as-a-Judge</strong></td><td>Complex trace / trajectory inspection.</td><td>Explore several spans to classify why workflow failed.</td><td>More cost, complexity and judge dependence.</td></tr>
+        <tr><td><strong>Human review</strong></td><td>Ambiguous, high-risk, subjective cases.</td><td>Review sensitive escalation behaviour.</td><td>Slow and expensive.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <strong>Rule of thumb:</strong> if a condition can be checked in code, check it in code.
+    Use model judges for semantic dimensions that deterministic assertions cannot express well.
+  </div>
+</section>
+
+<section id="regression">
+  <div class="kicker">8 · Regression</div>
+  <h2>An evaluation dataset becomes the agent's safety net</h2>
+  <p>
+    Agent behaviour changes when prompts, models, tools, retrieval logic, policies or orchestration change.
+    A regression dataset preserves important scenarios so changes can be evaluated before release.
+  </p>
+
+  <div class="grid grid-2">
+    <div class="card"><strong>Known-good cases</strong>Representative normal workflows that must remain stable.</div>
+    <div class="card"><strong>Previous defects</strong>Every important production bug becomes a permanent regression case.</div>
+    <div class="card"><strong>Edge cases</strong>Ambiguity, missing data, timeouts, retries and unusual state.</div>
+    <div class="card"><strong>Adversarial cases</strong>Prompt injection, privilege abuse and malicious tool output.</div>
+  </div>
+
+  <div class="code">Example regression record
+
+ID: REFUND-SEC-014
+Scenario: User requests refund for an order owned by another account
+Expected:
+  - ownership validation must fail
+  - refund_payment must NOT be called
+  - no protected order details disclosed
+  - response should follow authorised support flow
+
+Why retained:
+Production defect discovered 2026-08-17</div>
+</section>
+
+<section id="observability">
+  <div class="kicker">9 · Observability</div>
+  <h2>Tracing turns agent failures into inspectable evidence</h2>
+  <p>
+    Agentic systems are difficult to debug if engineers only record the final prompt and response.
+    A useful trace captures the nested execution of model calls, retrievals, tools, errors and state.
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node em">Trace</div><div class="arrow">→</div>
+      <div class="node">Planner span</div><div class="arrow">→</div>
+      <div class="node">Retriever span</div><div class="arrow">→</div>
+      <div class="node">Tool span</div><div class="arrow">→</div>
+      <div class="node">API span</div><div class="arrow">→</div>
+      <div class="node">Final response span</div>
+    </div>
+  </div>
+
+  <h3>Capture at minimum</h3>
+  <p>
+    <span class="badge">trace ID</span>
+    <span class="badge">session ID</span>
+    <span class="badge">agent / prompt version</span>
+    <span class="badge">model</span>
+    <span class="badge">tool name</span>
+    <span class="badge">tool arguments</span>
+    <span class="badge">tool result</span>
+    <span class="badge">latency</span>
+    <span class="badge">errors</span>
+    <span class="badge">token / cost metadata</span>
+    <span class="badge">state transition</span>
+  </p>
+
+  <p class="small">
+    Sensitive data should be masked or redacted before traces are exported to observability systems.
+  </p>
+</section>
+
+<section id="security">
+  <div class="kicker">10 · Security</div>
+  <h2>Agents expand the attack surface because they can act</h2>
+  <p>
+    Security testing must examine both language-model behaviour and the conventional security controls around every tool,
+    identity, API and data source the agent can access.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Risk</th><th>Example attack</th><th>What to test</th></tr></thead>
+      <tbody>
+        <tr><td>Prompt injection</td><td>Malicious instructions try to override agent policy.</td><td>Instruction hierarchy and isolation.</td></tr>
+        <tr><td>Indirect prompt injection</td><td>Retrieved web/document content contains hidden instructions.</td><td>Untrusted-context handling.</td></tr>
+        <tr><td>Excessive agency</td><td>Agent performs a higher-impact action than necessary.</td><td>Least privilege and approval boundaries.</td></tr>
+        <tr><td>Privilege escalation</td><td>User convinces agent to invoke an admin-only tool.</td><td>Deterministic authorization at tool boundary.</td></tr>
+        <tr><td>Data leakage</td><td>Agent exposes another tenant's information.</td><td>Object- and tenant-level authorization.</td></tr>
+        <tr><td>Tool poisoning</td><td>Malicious tool metadata/output manipulates the agent.</td><td>Tool trust, validation and sandboxing.</td></tr>
+        <tr><td>Memory poisoning</td><td>Untrusted content becomes persistent agent memory.</td><td>Memory write policy and provenance.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <strong>Security principle:</strong> never rely on the LLM itself as the authorization layer.
+    Permissions should be enforced deterministically by the application and downstream systems.
+  </div>
+</section>
+
+<section id="metrics">
+  <div class="kicker">11 · Metrics</div>
+  <h2>Measure quality at several levels</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>What it tells you</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Task success rate</td><td>How often the business goal is completed correctly.</td><td>% refunds correctly processed.</td></tr>
+        <tr><td>Tool correctness</td><td>Whether correct tools are selected.</td><td>% scenarios with expected tool set.</td></tr>
+        <tr><td>Argument correctness</td><td>Whether tool parameters are accurate.</td><td>Correct order ID / amount.</td></tr>
+        <tr><td>Trajectory success</td><td>Whether required sequence and constraints are respected.</td><td>Authentication before refund.</td></tr>
+        <tr><td>Step efficiency</td><td>Unnecessary or repeated actions.</td><td>Average tool calls per successful task.</td></tr>
+        <tr><td>Groundedness</td><td>Whether claims follow available evidence.</td><td>Policy explanation supported by retrieved content.</td></tr>
+        <tr><td>Latency</td><td>Time to complete task or individual steps.</td><td>P95 task completion time.</td></tr>
+        <tr><td>Cost</td><td>Resource usage for successful outcomes.</td><td>Model/tool cost per completed task.</td></tr>
+        <tr><td>Security pass rate</td><td>Resistance to adversarial cases.</td><td>% red-team probes blocked safely.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="tools">
+  <div class="kicker">12 · Tool Landscape</div>
+  <h2>Representative tools used in agent evaluation</h2>
+  <p>
+    The ecosystem changes quickly, and no single tool is mandatory. Choose tools based on the capability you need:
+    test execution, tracing, datasets, model judging, RAG evaluation, security testing or production monitoring.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tool</th><th>Primary role</th><th>Useful for</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>DeepEval</strong></td><td>Evaluation / testing framework</td><td>E2E, component, trajectory, tool-use and CI/CD evals</td><td>Pytest-style workflow; agent traces can become test cases.</td></tr>
+        <tr><td><strong>Arize Phoenix</strong></td><td>Observability + evaluation</td><td>Tracing, datasets, experiments, annotations, evals</td><td>Open-source and OpenTelemetry/OpenInference oriented.</td></tr>
+        <tr><td><strong>MLflow GenAI</strong></td><td>Tracing + evaluation + monitoring</td><td>Offline evaluation, trace scoring, production evaluation</td><td>Useful when MLflow is already part of the engineering stack.</td></tr>
+        <tr><td><strong>Promptfoo</strong></td><td>Evaluation + red teaming</td><td>Security probes, agent/MCP tests, CI/CD regressions</td><td>Strong emphasis on adversarial and policy testing.</td></tr>
+        <tr><td><strong>LangSmith</strong></td><td>Tracing + evaluation</td><td>Agent traces, datasets and evaluation workflows</td><td>Especially common with LangChain / LangGraph ecosystems.</td></tr>
+        <tr><td><strong>Ragas</strong></td><td>RAG / evaluation framework</td><td>Retrieval and generation quality assessment</td><td>Useful when agents rely heavily on retrieval.</td></tr>
+        <tr><td><strong>OpenTelemetry</strong></td><td>Telemetry standard / instrumentation</td><td>Portable traces, spans and observability integration</td><td>Not an eval framework itself; provides instrumentation foundation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <strong>Learning approach:</strong> learn one evaluation framework and one tracing platform first.
+    The underlying concepts transfer more easily than memorising every vendor tool.
+  </div>
+</section>
+
+<section id="examples">
+  <div class="kicker">13 · Worked Examples</div>
+  <h2>Three examples that show why agent testing is different</h2>
+
+  <h3>Example A — Customer-support refund agent</h3>
+  <div class="code">Goal:
+"Refund order ORD-1042."
+
+Critical assertions:
+- agent identifies authenticated user
+- order belongs to that user
+- refund policy permits the action
+- correct refund tool is selected
+- correct amount is passed
+- tool is called no more than once
+- API confirms success
+- system-of-record shows refunded state
+- final response matches actual state
+
+Security regression:
+A user must not be able to refund another account's order.</div>
+
+  <h3>Example B — Research / RAG agent</h3>
+  <div class="code">Goal:
+"Summarise our latest policy on supplier onboarding."
+
+Critical assertions:
+- retrieves current policy version
+- does not rely on archived document
+- key mandatory controls are included
+- every material claim is grounded in retrieved evidence
+- no unrelated sensitive document is exposed
+- citations point to the source actually used
+
+Failure example:
+Answer sounds convincing, but retrieval selected an obsolete policy.</div>
+
+  <h3>Example C — Supply-chain exception agent</h3>
+  <div class="code">Goal:
+"Resolve the low-stock alert for component X."
+
+Possible trajectory:
+1. read inventory level
+2. verify sensor / ERP state
+3. inspect open purchase orders
+4. compare approved suppliers
+5. request quote / availability
+6. create replenishment proposal
+7. require human approval above threshold
+8. create purchase order
+9. verify ERP state
+
+Tests:
+- duplicate IoT alerts must not create duplicate orders
+- unapproved suppliers must never be selected
+- agent must not bypass approval threshold
+- stale sensor data must not trigger an irreversible action
+- API timeout must not produce a false success message</div>
+</section>
+
+<section id="failure-taxonomy">
+  <div class="kicker">14 · Failure Taxonomy</div>
+  <h2>Classify failures by cause, not by vague symptom</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Failure class</th><th>Example</th><th>Likely owner / investigation area</th></tr></thead>
+      <tbody>
+        <tr><td>Planning failure</td><td>Agent omits required policy check.</td><td>Prompt / orchestration / agent logic.</td></tr>
+        <tr><td>Tool-selection failure</td><td>Uses delete instead of archive.</td><td>Tool descriptions / planning / guardrails.</td></tr>
+        <tr><td>Argument failure</td><td>Correct tool with wrong customer ID.</td><td>Entity extraction / state / parameter mapping.</td></tr>
+        <tr><td>Retrieval failure</td><td>Wrong document retrieved.</td><td>Index, query, ranking, metadata filters.</td></tr>
+        <tr><td>Authorization failure</td><td>Tool permits another user's resource.</td><td>Application / API security boundary.</td></tr>
+        <tr><td>Recovery failure</td><td>Retries irreversible tool call.</td><td>Retry policy / idempotency.</td></tr>
+        <tr><td>State failure</td><td>Agent claims completion but backend did not change.</td><td>Integration / transaction handling.</td></tr>
+        <tr><td>Observability failure</td><td>No trace shows why task failed.</td><td>Instrumentation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="workflow">
+  <div class="kicker">15 · Practical Workflow</div>
+  <h2>A repeatable evaluation process</h2>
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">Define risk</div><div class="arrow">→</div>
+      <div class="node">Create scenarios</div><div class="arrow">→</div>
+      <div class="node">Instrument traces</div><div class="arrow">→</div>
+      <div class="node">Add deterministic checks</div><div class="arrow">→</div>
+      <div class="node">Add semantic judges</div><div class="arrow">→</div>
+      <div class="node">Run experiments</div><div class="arrow">→</div>
+      <div class="node">Review failures</div><div class="arrow">→</div>
+      <div class="node em">Promote failures to regression</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Stage</th><th>Engineering question</th></tr></thead>
+      <tbody>
+        <tr><td>Risk definition</td><td>What wrong action would create real user or business harm?</td></tr>
+        <tr><td>Scenario design</td><td>Which happy, edge, failure and adversarial cases expose that risk?</td></tr>
+        <tr><td>Instrumentation</td><td>Can we see the plan, tools, arguments, errors and state changes?</td></tr>
+        <tr><td>Assertions</td><td>Which behaviours can be checked deterministically?</td></tr>
+        <tr><td>Semantic eval</td><td>Which dimensions require model or human judgement?</td></tr>
+        <tr><td>Regression gate</td><td>What score / pass criteria must hold before release?</td></tr>
+        <tr><td>Production learning</td><td>Which real failures should become new test cases?</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="memory-map">
+  <div class="kicker">16 · One-page Summary</div>
+  <h2>Remember: Goal → Plan → Act → Observe → Verify</h2>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node em">GOAL<br><span class="small">Was the task understood?</span></div>
+      <div class="arrow">→</div>
+      <div class="node">PLAN<br><span class="small">Was the approach valid?</span></div>
+      <div class="arrow">→</div>
+      <div class="node">ACT<br><span class="small">Were tools safe & correct?</span></div>
+      <div class="arrow">→</div>
+      <div class="node">OBSERVE<br><span class="small">Were results interpreted correctly?</span></div>
+      <div class="arrow">→</div>
+      <div class="node em">VERIFY<br><span class="small">Is the real state correct?</span></div>
+    </div>
+  </div>
+
+  <blockquote>
+    A high-quality agent test proves not merely that the answer sounded right,
+    but that the system behaved correctly under the constraints that matter.
+  </blockquote>
+</section>
+
+<section id="discussion">
+  <div class="kicker">17 · Key Discussion Points</div>
+  <h2>Concepts worth being able to explain naturally</h2>
+  <ul>
+    <li>Agentic testing differs from ordinary LLM evaluation because agents take multi-step actions and change external state.</li>
+    <li>End-to-end success and component-level correctness are both necessary.</li>
+    <li>Trajectory evaluation reveals failures hidden by a plausible final answer.</li>
+    <li>Tool permissions and business authorization should be deterministic, not delegated to the model.</li>
+    <li>Every important production defect should become a regression test.</li>
+    <li>Tracing is essential because agent failures are distributed across models, tools, retrieval and external systems.</li>
+    <li>Use deterministic assertions first; use LLM judges when semantic judgement is genuinely needed.</li>
+    <li>Security testing must include prompt injection, indirect injection, excessive agency, privilege escalation, tool poisoning and data leakage.</li>
+    <li>The most useful quality metric is often successful completion of the real business task under the required constraints.</li>
+  </ul>
+</section>
+
+<section id="references">
+  <div class="kicker">18 · References & Learning Guide</div>
+  <h2>Industry References & Further Learning</h2>
+  <p>
+    Agentic AI testing spans software quality, LLM evaluation, observability, security,
+    retrieval quality and production monitoring. The resources below are deliberately
+    grouped by learning objective rather than presented as a flat list of links.
+  </p>
+
+  <div class="callout">
+    <strong>How to use this section:</strong> start with the standards and security material,
+    then learn tracing and evaluation concepts, and only after that choose tooling.
+    Tools will change; the engineering principles transfer.
+  </div>
+
+  <h3>A. Foundations: AI Risk, Security and Threat Modelling</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Resource</th><th>Why it matters</th><th>Recommended use</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://www.nist.gov/itl/ai-risk-management-framework">NIST — AI Risk Management Framework (AI RMF)</a></td>
+          <td>A vendor-neutral foundation for thinking about AI risk, governance, measurement and risk management.</td>
+          <td>Read first to understand risk-based AI engineering rather than treating testing as a collection of tools.</td>
+        </tr>
+        <tr>
+          <td><a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/">OWASP — Top 10 for Agentic Applications 2026</a></td>
+          <td>Focused guidance on security risks created by autonomous, tool-using agents that plan and act across workflows.</td>
+          <td>Use when designing agent security test cases, abuse cases and regression suites.</td>
+        </tr>
+        <tr>
+          <td><a href="https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/">OWASP — GenAI / LLM Top 10 2026</a></td>
+          <td>Broader risks affecting LLM-powered applications, including issues that also appear inside agent systems.</td>
+          <td>Use alongside the agentic Top 10 to avoid focusing only on autonomous-action risks.</td>
+        </tr>
+        <tr>
+          <td><a href="https://atlas.mitre.org/">MITRE ATLAS</a></td>
+          <td>Knowledge base of adversarial tactics and techniques against AI-enabled systems.</td>
+          <td>Useful for threat modelling and translating security concerns into concrete adversarial scenarios.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>B. Observability: Learn to See What the Agent Actually Did</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Resource</th><th>What to learn</th><th>Recommended use</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://opentelemetry.io/">OpenTelemetry</a></td>
+          <td>Core concepts of traces, spans, metrics, logs and vendor-neutral telemetry.</td>
+          <td>Learn before becoming dependent on any one observability vendor.</td>
+        </tr>
+        <tr>
+          <td><a href="https://opentelemetry.io/docs/specs/semconv/">OpenTelemetry — Semantic Conventions</a></td>
+          <td>How telemetry attributes, operations and span naming are standardised across systems.</td>
+          <td>Useful when designing consistent instrumentation for agent, tool, retrieval and API spans.</td>
+        </tr>
+        <tr>
+          <td><a href="https://mlflow.org/docs/latest/genai/tracing">MLflow — Agent & LLM Tracing</a></td>
+          <td>How to capture intermediate model calls, retrievals, tool calls, latency and production traces.</td>
+          <td>A practical next step after learning basic OpenTelemetry concepts.</td>
+        </tr>
+        <tr>
+          <td><a href="https://arize.com/phoenix/">Arize Phoenix</a></td>
+          <td>Open-source tracing, datasets, experiments, annotations and evaluation workflows for LLM and agent applications.</td>
+          <td>Good hands-on environment for learning trace-driven debugging and evaluation.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>C. Evaluation Engineering: Offline, Regression and Production Evals</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Resource</th><th>What to learn</th><th>Recommended use</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://deepeval.com/docs/getting-started-agents">DeepEval — AI Agent Evaluation</a></td>
+          <td>End-to-end, component-level, trace-based, tool-use and CI/CD evaluation patterns.</td>
+          <td>Good first framework if you want a test-engineering workflow that feels similar to unit/regression testing.</td>
+        </tr>
+        <tr>
+          <td><a href="https://docs.langchain.com/langsmith/evaluation-types">LangSmith — Evaluation Types</a></td>
+          <td>Offline benchmarking, unit tests, regression tests, backtesting, online monitoring and evaluator types.</td>
+          <td>Useful for understanding when to evaluate, not just which metric to run.</td>
+        </tr>
+        <tr>
+          <td><a href="https://mlflow.org/docs/latest/genai/eval-monitor/running-evaluation/traces/">MLflow — Evaluating Production Traces</a></td>
+          <td>How production traces become evaluation inputs, ground truth, scorers and quality-improvement datasets.</td>
+          <td>Study after basic offline evaluation to understand continuous production evaluation.</td>
+        </tr>
+        <tr>
+          <td><a href="https://arize.com/resources/agent-evals-from-traces/">Arize — Building Agent Evals from Traces</a></td>
+          <td>Trace-based failure analysis, deterministic checks, LLM judges and trajectory-oriented evaluation.</td>
+          <td>Useful for learning how to move from observability data to actionable evaluation.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>D. Security and Red-Team Practice</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Resource</th><th>What to learn</th><th>Recommended use</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://www.promptfoo.dev/docs/red-team/guides/">Promptfoo — Red Teaming Guides</a></td>
+          <td>Hands-on adversarial testing for LLM applications, RAG, agents, guardrails and supply-chain risks.</td>
+          <td>Use to turn OWASP / MITRE risks into executable test scenarios.</td>
+        </tr>
+        <tr>
+          <td><a href="https://www.promptfoo.dev/docs/red-team/agents/">Promptfoo — Agent Red Teaming</a></td>
+          <td>Agent-focused attacks such as privilege escalation, context poisoning and memory manipulation.</td>
+          <td>Good practical complement to OWASP Agentic AI guidance.</td>
+        </tr>
+        <tr>
+          <td><a href="https://www.promptfoo.dev/docs/red-team/plugins/mcp/">Promptfoo — MCP Security Testing</a></td>
+          <td>Tool discovery, parameter manipulation and privilege-boundary tests for MCP-connected systems.</td>
+          <td>Relevant when agents use Model Context Protocol servers or dynamic external tools.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>E. Retrieval / RAG Evaluation</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Resource</th><th>Why it matters</th><th>Recommended use</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://docs.ragas.io/">Ragas Documentation</a></td>
+          <td>Evaluation patterns for retrieval and generation quality, especially where the agent depends on external context.</td>
+          <td>Use when your agent's correctness depends heavily on RAG or document retrieval.</td>
+        </tr>
+        <tr>
+          <td><a href="https://mlflow.org/docs/latest/genai/eval-monitor/running-evaluation/traces/">MLflow Trace Evaluation</a></td>
+          <td>Supports scoring information inside traces, including retrieval and intermediate agent behaviour.</td>
+          <td>Useful for linking retrieval quality to the complete execution trajectory.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Recommended Learning Sequence</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Stage</th><th>Focus</th><th>Suggested material</th><th>What you should be able to do afterwards</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td>Agent architecture</td>
+          <td>This article + your existing voice-agent architecture article</td>
+          <td>Explain planning, tools, state, observations and final outcomes.</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td>Risk & security foundations</td>
+          <td>NIST AI RMF → OWASP Agentic Top 10 → MITRE ATLAS</td>
+          <td>Turn business risks into security and abuse test scenarios.</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td>Tracing & observability</td>
+          <td>OpenTelemetry → Phoenix or MLflow tracing</td>
+          <td>Inspect an agent run as a trace instead of only seeing input/output.</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td>Offline evaluation</td>
+          <td>DeepEval or LangSmith evaluation concepts</td>
+          <td>Create datasets, deterministic checks and regression tests.</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td>Trajectory evaluation</td>
+          <td>Arize trace-eval material + MLflow trace evaluation</td>
+          <td>Judge tool ordering, recovery, intermediate steps and final state.</td>
+        </tr>
+        <tr>
+          <td><strong>6</strong></td>
+          <td>RAG evaluation</td>
+          <td>Ragas + trace-level retrieval evaluation</td>
+          <td>Test retrieval relevance, groundedness and evidence quality.</td>
+        </tr>
+        <tr>
+          <td><strong>7</strong></td>
+          <td>Red teaming</td>
+          <td>Promptfoo guides + OWASP agentic security risks</td>
+          <td>Build adversarial tests for injection, privilege, memory and tools.</td>
+        </tr>
+        <tr>
+          <td><strong>8</strong></td>
+          <td>Production evaluation</td>
+          <td>LangSmith online evaluation or MLflow production trace evaluation</td>
+          <td>Convert real failures into regression cases and monitor quality drift.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>What I Would Learn Hands-On First</h3>
+  <ol>
+    <li><strong>Write deterministic agent tests:</strong> assert tool name, arguments, call ordering and final backend state.</li>
+    <li><strong>Add tracing:</strong> instrument one small agent and inspect every LLM, tool and retrieval span.</li>
+    <li><strong>Create a 20–30 case regression dataset:</strong> normal cases, previous failures, edge cases and adversarial cases.</li>
+    <li><strong>Add one semantic judge:</strong> use it only for a dimension that cannot be reliably checked in code.</li>
+    <li><strong>Red-team the same agent:</strong> attempt injection, privilege abuse and malicious tool/context manipulation.</li>
+    <li><strong>Use production traces as learning data:</strong> classify failures and promote important ones into permanent regression tests.</li>
+  </ol>
+
+  <div class="callout">
+    <strong>Do not try to learn every framework.</strong> A stronger portfolio demonstrates that you understand
+    evaluation design, trace analysis, security boundaries and regression methodology. One or two tools used deeply
+    are more valuable than a list of ten tools used superficially.
+  </div>
+</section>
+
+<section id="conclusion">
+  <div class="kicker">Conclusion</div>
+  <h2>Agent testing is software testing plus decision-system evaluation</h2>
+  <p>
+    Agentic AI does not replace traditional software-testing principles; it adds new layers.
+    APIs still need deterministic validation. Permissions still require conventional security controls.
+    State changes still need end-to-end verification. What changes is that an agent can choose its own path through those systems.
+  </p>
+  <p>
+    The tester therefore evaluates both <strong>system correctness</strong> and <strong>decision quality</strong>.
+    The strongest evaluation strategy combines deterministic tests, trace-based trajectory analysis,
+    semantic evaluation, adversarial testing and production evidence.
+  </p>
+</section>
+
+<div class="footer">Agentic AI Testing · Yogesh Sridhar · Engineering Learning Portfolio</div>
+</div>
+</body>
+</html>
