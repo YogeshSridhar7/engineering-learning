@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Software Testing Fundamentals — A Practical Engineering Mental Model</title>
+
+<style>
+:root{
+  --paper:#f4f2ec;
+  --surface:#fbfaf7;
+  --ink:#22251f;
+  --muted:#666a63;
+  --line:#d9d6cf;
+  --line-strong:#c7c3ba;
+  --accent:#3d4a43;
+  --accent-soft:#e9ece8;
+  --accent-deep:#2f3833;
+  --code:#272b28;
+  --table-head:#ece9e2;
+  --shadow:0 10px 28px rgba(35,39,34,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:17px;
+  line-height:1.72;
+  letter-spacing:.002em;
+}
+.container{
+  width:min(100%,1180px);
+  margin:0 auto;
+  padding:42px 28px 88px;
+}
+.hero{
+  background:var(--surface);
+  color:var(--ink);
+  border:1px solid var(--line-strong);
+  border-radius:6px;
+  padding:52px 58px 46px;
+  box-shadow:var(--shadow);
+}
+.eyebrow{
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.76rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  font-weight:700;
+  color:var(--accent);
+  margin-bottom:18px;
+}
+h1,h2,h3{
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--ink);
+  letter-spacing:-.012em;
+}
+h1{
+  font-size:clamp(2.25rem,4.2vw,4.1rem);
+  line-height:1.04;
+  font-weight:650;
+  margin:0 0 20px;
+  max-width:940px;
+}
+.hero p{
+  max-width:860px;
+  color:#4d514c;
+  font-size:1.07rem;
+  margin:0;
+}
+.disclosure{
+  margin-top:26px;
+  padding-top:18px;
+  border-top:1px solid var(--line);
+  color:var(--muted);
+  font-size:.9rem;
+  line-height:1.55;
+}
+section{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:6px;
+  margin-top:22px;
+  padding:34px 38px 36px;
+  box-shadow:0 4px 14px rgba(35,39,34,.025);
+}
+section > *{
+  max-width:920px;
+}
+section > .table-wrap,
+section > .diagram,
+section > .grid,
+section > .pyramid,
+section > .timeline,
+section > .code{
+  max-width:none;
+}
+h2{
+  font-size:1.72rem;
+  line-height:1.25;
+  font-weight:650;
+  margin:0 0 14px;
+}
+h3{
+  font-size:1.08rem;
+  line-height:1.4;
+  font-weight:700;
+  margin:28px 0 10px;
+  text-transform:none;
+}
+p{margin:9px 0 15px}
+.kicker{
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--accent);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:.74rem;
+  margin-bottom:10px;
+}
+.small{font-size:.88rem;color:var(--muted)}
+.callout{
+  background:#f1f0eb;
+  border-left:3px solid var(--accent);
+  padding:16px 18px;
+  border-radius:2px;
+  margin:22px 0;
+  color:#3f433e;
+}
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{
+  border:1px solid var(--line);
+  background:#fdfcf9;
+  border-radius:4px;
+  padding:18px 20px;
+}
+.card strong{
+  display:block;
+  margin-bottom:7px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.95rem;
+  color:var(--accent-deep);
+}
+.table-wrap{
+  overflow-x:auto;
+  margin-top:16px;
+  border:1px solid var(--line);
+  border-radius:4px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.91rem;
+  background:#fffefb;
+}
+th,td{
+  padding:12px 14px;
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  text-align:left;
+  vertical-align:top;
+}
+th:last-child,td:last-child{border-right:0}
+tr:last-child td{border-bottom:0}
+th{
+  background:var(--table-head);
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:700;
+  color:#30342f;
+}
+tr:nth-child(even) td{background:#faf9f5}
+.diagram{
+  background:#f8f7f3;
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:22px;
+  overflow:auto;
+  margin-top:18px;
+}
+.flow{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex-wrap:wrap;
+}
+.node{
+  background:#fffefb;
+  border:1px solid var(--line-strong);
+  border-radius:3px;
+  padding:11px 13px;
+  min-width:128px;
+  text-align:center;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.86rem;
+  font-weight:650;
+  color:#353a35;
+}
+.node.blue{
+  background:var(--accent-soft);
+  border-color:#bcc3bd;
+}
+.arrow{
+  color:#777d77;
+  font-weight:700;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.pyramid{max-width:760px;margin:22px auto 0}
+.level{
+  margin:8px auto;
+  padding:11px 16px;
+  text-align:center;
+  border-radius:3px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.88rem;
+  font-weight:700;
+  border:1px solid #c9c6be;
+}
+.level.l1{width:38%;background:#3c453f;color:#fff}
+.level.l2{width:62%;background:#68726c;color:#fff}
+.level.l3{width:84%;background:#a5aba7;color:#1f231f}
+.level.l4{width:100%;background:#e5e4df;color:#252925}
+.timeline{
+  display:grid;
+  grid-template-columns:155px 1fr;
+  gap:0 22px;
+  margin-top:14px;
+}
+.time{
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:700;
+  color:var(--accent-deep);
+  padding:10px 14px 10px 0;
+  border-right:1px solid var(--line-strong);
+}
+.event{padding:10px 0 18px}
+.code{
+  background:var(--code);
+  color:#efefe9;
+  border-radius:4px;
+  padding:17px 18px;
+  font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  font-size:.84rem;
+  line-height:1.55;
+  overflow:auto;
+  white-space:pre-wrap;
+  border:1px solid #1d211e;
+}
+.checklist{padding-left:21px}
+.checklist li{margin:7px 0}
+.legend{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.badge,.pill{
+  display:inline-block;
+  padding:4px 8px;
+  margin:2px 3px 2px 0;
+  border-radius:999px;
+  background:#eeece6;
+  border:1px solid #d5d1c8;
+  color:#454a45;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.72rem;
+  font-weight:650;
+}
+.metric{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  border-bottom:1px solid var(--line);
+  padding:9px 0;
+}
+.metric:last-child{border-bottom:0}
+.metric span:first-child{
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:650;
+  font-size:.9rem;
+}
+.layer{
+  border:1px solid var(--line);
+  border-radius:3px;
+  padding:14px 16px;
+  margin:9px 0;
+  background:#fbfaf6;
+}
+.layer b{color:var(--accent-deep)}
+a{color:#38463f;text-decoration:none;border-bottom:1px solid #a9afa9}
+a:hover{color:#1f2924;border-bottom-color:#1f2924}
+.footer{
+  color:var(--muted);
+  font-size:.86rem;
+  margin-top:30px;
+  text-align:center;
+  font-family:Arial,Helvetica,sans-serif;
+}
+#contents table td{
+  width:50%;
+  background:#fbfaf6;
+}
+#contents a{
+  display:block;
+  padding:2px 0;
+  border-bottom:0;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.9rem;
+  font-weight:600;
+}
+@media(max-width:880px){
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .hero{padding:34px 28px}
+  section{padding:28px 24px}
+  .container{padding:24px 14px 60px}
+  .timeline{grid-template-columns:1fr}
+  .time{border-right:0;border-bottom:1px solid var(--line);padding-bottom:5px}
+  #contents table td{display:block;width:100%}
+}
+@media print{
+  body{background:#fff;font-size:11.5pt}
+  .container{max-width:none;padding:0}
+  .hero,section{box-shadow:none;border-color:#bbb;break-inside:avoid}
+  a{color:#000;border:0}
+}
+</style>
+
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <div class="eyebrow">Software Testing Fundamentals · Practical Learning Note</div>
+  <h1>A Mental Model for Testing Modern Software</h1>
+  <p>
+    A concise engineering guide to testing terminology, SDLC stages, automation, cloud testing,
+    security, and modern AI/voice systems — connected to real examples from voice-agent testing
+    and smart-contract / IoT supply-chain work.
+  </p>
+  <div class="disclosure">
+    <strong>Author:</strong> Yogesh Sridhar<br>
+    <strong>Disclosure:</strong> AI-assisted for structuring, editing and presentation.
+    The ideas, learning, examples, interpretations and conclusions are the author's own.
+  </div>
+</header>
+
+<section id="contents">
+  <div class="kicker">Contents</div>
+  <h2>Table of Contents</h2>
+  <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr><td><a href="#mental-model">1. Core Mental Model</a></td><td><a href="#sdlc">2. Testing Across the SDLC</a></td></tr>
+        <tr><td><a href="#test-layers">3. Test Layers &amp; Test Pyramid</a></td><td><a href="#terminology">4. Essential Testing Terminology</a></td></tr>
+        <tr><td><a href="#functional-nonfunctional">5. Functional vs Non-functional Testing</a></td><td><a href="#automation-evolution">6. Evolution of Testing &amp; Automation</a></td></tr>
+        <tr><td><a href="#cloud-testing">7. Cloud Testing</a></td><td><a href="#security-testing">8. Security &amp; Penetration Testing</a></td></tr>
+        <tr><td><a href="#voice-case-study">9. Case Study: Voice-Agent Testing</a></td><td><a href="#smart-contract-case-study">10. Case Study: Smart Contract + IoT</a></td></tr>
+        <tr><td><a href="#test-design">11. Practical Test Design</a></td><td><a href="#defect-reporting">12. Defect Reporting</a></td></tr>
+        <tr><td><a href="#discussion-points">13. Key Discussion Points</a></td><td><a href="#memory-map">14. One-page Memory Map</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<section id="mental-model">
+  <div class="kicker">1 · Core Mental Model</div>
+  <h2>Testing is evidence for a decision</h2>
+  <p>
+    The simplest useful model is not “run tests and find bugs.” It is:
+    <strong>identify risk → choose the right test layer → collect evidence → make a release decision.</strong>
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">1. Risk<br><span class="small">What can go wrong?</span></div>
+      <div class="arrow">→</div>
+      <div class="node">2. Test Layer<br><span class="small">Where should we test?</span></div>
+      <div class="arrow">→</div>
+      <div class="node">3. Evidence<br><span class="small">What proves it?</span></div>
+      <div class="arrow">→</div>
+      <div class="node">4. Decision<br><span class="small">Ship, fix, monitor?</span></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Engineering mindset:</strong> A failed test is useful only if it tells us something actionable:
+    what failed, under which conditions, at which layer, with what business impact, and whether it can be reproduced.
+  </div>
+</section>
+
+<section id="sdlc">
+  <div class="kicker">2 · SDLC</div>
+  <h2>At what stage should testing happen?</h2>
+  <p>
+    Modern testing is continuous. Different test activities belong at different stages of the
+    Software Development Life Cycle (SDLC).
+  </p>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>SDLC stage</th>
+        <th>Main testing activity</th>
+        <th>Typical techniques</th>
+        <th>Question being answered</th>
+        <th>Your project example</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Requirements</strong></td>
+        <td>Requirement review, acceptance criteria, risk analysis</td>
+        <td>Static testing, ambiguity review, threat modelling</td>
+        <td>Are we building the right thing?</td>
+        <td>Define what a voice agent must do before a booking is considered successful.</td>
+      </tr>
+      <tr>
+        <td><strong>Design / Architecture</strong></td>
+        <td>Testability and failure-path review</td>
+        <td>Architecture review, security design review, contract design</td>
+        <td>Can this design be tested and operated safely?</td>
+        <td>Map STT → LLM → tool/API → TTS boundaries and failure points.</td>
+      </tr>
+      <tr>
+        <td><strong>Development</strong></td>
+        <td>Fast developer feedback</td>
+        <td>Unit, component, static analysis</td>
+        <td>Does each small piece behave correctly?</td>
+        <td>Validate date parsing, booking parameter extraction, smart-contract functions.</td>
+      </tr>
+      <tr>
+        <td><strong>Integration</strong></td>
+        <td>Validate interfaces between systems</td>
+        <td>API tests, contract tests, integration tests</td>
+        <td>Do components communicate correctly?</td>
+        <td>Voice agent calls booking API with correct date/time; IoT event triggers contract logic.</td>
+      </tr>
+      <tr>
+        <td><strong>System / Pre-release</strong></td>
+        <td>Validate complete behaviour</td>
+        <td>System, E2E, regression, performance, security</td>
+        <td>Does the whole product work under realistic conditions?</td>
+        <td>Real call → speech recognition → booking → confirmation → TTS.</td>
+      </tr>
+      <tr>
+        <td><strong>Release</strong></td>
+        <td>Release confidence</td>
+        <td>Smoke tests, deployment verification, canary checks</td>
+        <td>Is the deployed build healthy?</td>
+        <td>Agent answers, tools connect, core flow works after deployment.</td>
+      </tr>
+      <tr>
+        <td><strong>Production</strong></td>
+        <td>Observe real behaviour</td>
+        <td>Monitoring, tracing, synthetic tests, incident analysis</td>
+        <td>Is the system healthy for real users?</td>
+        <td>Track call latency, booking failures, STT error patterns and tool-call failures.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <strong>Shift left:</strong> test earlier to prevent expensive defects.
+    <br><strong>Shift right:</strong> observe real production behaviour to detect issues that pre-release environments cannot fully reproduce.
+  </div>
+</section>
+
+<section id="test-layers">
+  <div class="kicker">3 · Test Layers</div>
+  <h2>The test pyramid</h2>
+  <p>
+    The closer a test is to the code, the faster and cheaper it usually is. The closer it is to the full user journey,
+    the more realistic — but slower and more expensive — it becomes.
+  </p>
+
+  <div class="pyramid">
+    <div class="level l1">E2E / UI — few, high-value journeys</div>
+    <div class="level l2">Integration / API — system boundaries</div>
+    <div class="level l3">Component — business logic in isolation</div>
+    <div class="level l4">Unit — many fast checks</div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:20px">
+    <div class="card">
+      <strong>Voice-agent example</strong>
+      Unit: parse “next Tuesday at 3”.<br>
+      Integration: LLM/tool request reaches booking API correctly.<br>
+      E2E: caller speaks → booking created → spoken confirmation.
+    </div>
+    <div class="card">
+      <strong>Smart-contract / IoT example</strong>
+      Unit: contract condition evaluates correctly.<br>
+      Integration: IoT sensor event reaches blockchain layer.<br>
+      E2E: physical event → smart-contract execution → supply-chain status update.
+    </div>
+  </div>
+</section>
+
+<section id="terminology">
+  <div class="kicker">4 · Essential Terminology</div>
+  <h2>Core testing terms — explained practically</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Term</th>
+        <th>Meaning</th>
+        <th>When / why it is used</th>
+        <th>Practical example</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Test case</strong></td><td>Defined input, steps and expected result.</td><td>Repeatable validation.</td><td>Say “Book Tuesday 3 PM”; expect one correct booking.</td></tr>
+      <tr><td><strong>Test scenario</strong></td><td>Higher-level situation to test.</td><td>Broader behaviour coverage.</td><td>User changes appointment twice during the same call.</td></tr>
+      <tr><td><strong>Test suite</strong></td><td>Collection of related test cases.</td><td>Regression or release validation.</td><td>All booking, cancellation and transfer tests.</td></tr>
+      <tr><td><strong>Expected result</strong></td><td>What should happen.</td><td>Pass/fail comparison.</td><td>Booking tool returns confirmed slot.</td></tr>
+      <tr><td><strong>Actual result</strong></td><td>What actually happened.</td><td>Evidence for a defect.</td><td>Agent booked 5 PM instead of 3 PM.</td></tr>
+      <tr><td><strong>Defect / bug</strong></td><td>Observed behaviour differs from requirement or expected behaviour.</td><td>Tracking incorrect behaviour.</td><td>STT converts “fifteen thirty” into “fifty thirty”.</td></tr>
+      <tr><td><strong>Severity</strong></td><td>Impact of the defect.</td><td>Risk assessment.</td><td>Wrong financial transaction = high severity.</td></tr>
+      <tr><td><strong>Priority</strong></td><td>How urgently it should be fixed.</td><td>Delivery planning.</td><td>Homepage typo may be low severity but high priority before launch.</td></tr>
+      <tr><td><strong>Happy path</strong></td><td>Normal successful flow.</td><td>Baseline behaviour.</td><td>User provides clear date/time; booking succeeds.</td></tr>
+      <tr><td><strong>Negative testing</strong></td><td>Invalid or unexpected inputs.</td><td>Robustness.</td><td>User requests a date that does not exist.</td></tr>
+      <tr><td><strong>Edge case</strong></td><td>Unusual boundary condition.</td><td>Find failures outside normal flow.</td><td>User pauses for 7 seconds then corrects themselves.</td></tr>
+      <tr><td><strong>Boundary value</strong></td><td>Test limits and values around them.</td><td>Input validation.</td><td>Maximum call duration, max booking size, min stock value.</td></tr>
+      <tr><td><strong>Regression</strong></td><td>Existing behaviour breaks after a change.</td><td>Protect past functionality.</td><td>Prompt update improves booking but breaks cancellation.</td></tr>
+      <tr><td><strong>Retest</strong></td><td>Verify a specific defect fix.</td><td>Confirm remediation.</td><td>Re-run the exact “Thursday 3 PM” defect case.</td></tr>
+      <tr><td><strong>Smoke test</strong></td><td>Small set of critical checks.</td><td>Build/deployment confidence.</td><td>Agent answers, STT works, booking API responds.</td></tr>
+      <tr><td><strong>Sanity test</strong></td><td>Focused check around a change.</td><td>Fast validation after a small fix.</td><td>After date parser fix, test several date formats.</td></tr>
+      <tr><td><strong>Exploratory testing</strong></td><td>Learn, design and execute tests dynamically.</td><td>Find unexpected behaviour.</td><td>Interrupt the voice agent, change intent, speak ambiguously.</td></tr>
+      <tr><td><strong>UAT</strong></td><td>User Acceptance Testing.</td><td>Business sign-off.</td><td>Client confirms agent follows required booking policy.</td></tr>
+      <tr><td><strong>Observability</strong></td><td>Ability to understand system behaviour through logs, metrics and traces.</td><td>Production diagnosis.</td><td>Trace a failed call from STT through API and TTS.</td></tr>
+      <tr><td><strong>Root cause</strong></td><td>Underlying reason a problem occurred.</td><td>Fix the cause, not only the symptom.</td><td>Wrong booking caused by timezone conversion, not the LLM.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="functional-nonfunctional">
+  <div class="kicker">5 · Functional vs Non-functional</div>
+  <h2>Two categories that prevent confusion</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <strong>Functional testing</strong>
+      <p>Tests <em>what</em> the system does.</p>
+      <div class="legend">
+        <span class="badge">Login</span>
+        <span class="badge">Booking</span>
+        <span class="badge">Payment</span>
+        <span class="badge">Cancellation</span>
+        <span class="badge">Smart-contract execution</span>
+      </div>
+    </div>
+    <div class="card">
+      <strong>Non-functional testing</strong>
+      <p>Tests <em>how well</em> the system does it.</p>
+      <div class="legend">
+        <span class="badge">Performance</span>
+        <span class="badge">Security</span>
+        <span class="badge">Scalability</span>
+        <span class="badge">Reliability</span>
+        <span class="badge">Usability</span>
+        <span class="badge">Accessibility</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="automation-evolution">
+  <div class="kicker">6 · Automation</div>
+  <h2>How testing evolved from the 2000s</h2>
+
+  <div class="timeline">
+    <div class="time">Early 2000s</div>
+    <div class="event"><strong>Testing often followed development.</strong> Manual test execution, large release cycles, separate QA phases.</div>
+
+    <div class="time">2001 onward</div>
+    <div class="event"><strong>Agile increases feedback frequency.</strong> Smaller releases, closer collaboration, continuous testing mindset.</div>
+
+    <div class="time">Mid-2000s</div>
+    <div class="event"><strong>Browser automation grows.</strong> Tools such as Selenium make repeatable UI regression practical.</div>
+
+    <div class="time">2010s</div>
+    <div class="event"><strong>CI/CD and DevOps mature.</strong> Automated test suites become part of build and deployment pipelines.</div>
+
+    <div class="time">Cloud era</div>
+    <div class="event"><strong>Infrastructure becomes dynamic.</strong> Testing expands to APIs, distributed systems, containers, resilience and scale.</div>
+
+    <div class="time">AI era</div>
+    <div class="event"><strong>Outputs become probabilistic.</strong> Evaluation focuses on behaviour, safety, task completion, consistency and tool correctness — not only exact string matching.</div>
+  </div>
+
+  <div class="callout">
+    <strong>Automation principle:</strong> automate predictable repetition; keep human judgement for ambiguity, usability, exploration and risk-based investigation.
+  </div>
+</section>
+
+<section id="cloud-testing">
+  <div class="kicker">7 · Cloud Testing</div>
+  <h2>What changes when software runs in the cloud?</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Cloud test type</th><th>What it checks</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Load testing</strong></td><td>Expected high demand.</td><td>Can 500 voice sessions run concurrently?</td></tr>
+      <tr><td><strong>Stress testing</strong></td><td>Behaviour beyond expected limits.</td><td>What happens at 2,000 concurrent sessions?</td></tr>
+      <tr><td><strong>Spike testing</strong></td><td>Sudden traffic increase.</td><td>Campaign causes calls to jump 10× in one minute.</td></tr>
+      <tr><td><strong>Soak / endurance</strong></td><td>Long-duration stability.</td><td>Run call workloads for 24 hours and watch memory/latency.</td></tr>
+      <tr><td><strong>Scalability</strong></td><td>Can capacity increase with demand?</td><td>Additional instances handle increased call volume.</td></tr>
+      <tr><td><strong>Elasticity</strong></td><td>Can resources scale up and down automatically?</td><td>Compute expands at peak and contracts afterwards.</td></tr>
+      <tr><td><strong>Failover</strong></td><td>Recovery when a component fails.</td><td>API node fails; traffic routes to a healthy node.</td></tr>
+      <tr><td><strong>Disaster recovery</strong></td><td>Recovery after major outage/data loss.</td><td>Restore service from another region or backup.</td></tr>
+      <tr><td><strong>Multi-tenancy</strong></td><td>Isolation between customers.</td><td>Company A must never see Company B's data.</td></tr>
+      <tr><td><strong>Configuration testing</strong></td><td>Cloud settings are safe and correct.</td><td>No public storage bucket or over-permissive role.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="security-testing">
+  <div class="kicker">8 · Security</div>
+  <h2>Security testing terminology</h2>
+
+  <div class="grid grid-3">
+    <div class="card">
+      <strong>Vulnerability assessment</strong>
+      Identify weaknesses and known issues. Often tool-assisted and broad.
+    </div>
+    <div class="card">
+      <strong>Penetration test</strong>
+      Authorised attempt to validate whether weaknesses can actually be exploited.
+    </div>
+    <div class="card">
+      <strong>Threat modelling</strong>
+      Ask what assets matter, who may attack them, how they could be attacked, and what controls are needed.
+    </div>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Term</th><th>Meaning</th><th>Mental shortcut</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Black box</strong></td><td>Tester has little/no internal knowledge.</td><td>External attacker view.</td></tr>
+      <tr><td><strong>White box</strong></td><td>Tester has source/design/internal information.</td><td>Deep internal view.</td></tr>
+      <tr><td><strong>Grey box</strong></td><td>Some internal information is available.</td><td>Mixed real-world view.</td></tr>
+      <tr><td><strong>SAST</strong></td><td>Static Application Security Testing.</td><td>Inspect code without running it.</td></tr>
+      <tr><td><strong>DAST</strong></td><td>Dynamic Application Security Testing.</td><td>Attack/test the running application.</td></tr>
+      <tr><td><strong>SCA</strong></td><td>Software Composition Analysis.</td><td>Check third-party dependencies.</td></tr>
+      <tr><td><strong>CVE</strong></td><td>Identifier for a publicly disclosed vulnerability.</td><td>Which known vulnerability?</td></tr>
+      <tr><td><strong>CVSS</strong></td><td>Severity scoring framework for vulnerabilities.</td><td>How serious is it?</td></tr>
+      <tr><td><strong>Red team</strong></td><td>Simulates attacker behaviour.</td><td>Offence.</td></tr>
+      <tr><td><strong>Blue team</strong></td><td>Defends and detects attacks.</td><td>Defence.</td></tr>
+      <tr><td><strong>Purple team</strong></td><td>Red + Blue collaboration.</td><td>Improve both.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    Security testing must be authorised. A penetration test is not simply “running a scanner”; it is controlled validation of exploitable risk within an agreed scope.
+  </div>
+</section>
+
+<section id="voice-case-study">
+  <div class="kicker">9 · Case Study A</div>
+  <h2>Voice-agent testing mental model</h2>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">Caller</div><div class="arrow">→</div>
+      <div class="node">STT</div><div class="arrow">→</div>
+      <div class="node">LLM / Agent</div><div class="arrow">→</div>
+      <div class="node">Tool / API</div><div class="arrow">→</div>
+      <div class="node">Business System</div><div class="arrow">→</div>
+      <div class="node">TTS</div><div class="arrow">→</div>
+      <div class="node">Caller</div>
+    </div>
+  </div>
+
+  <h3>How to isolate a defect</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Layer</th><th>What to verify</th><th>Example failure</th></tr></thead>
+    <tbody>
+      <tr><td><strong>STT</strong></td><td>Was speech transcribed correctly?</td><td>“15:30” becomes “5:30”.</td></tr>
+      <tr><td><strong>LLM / reasoning</strong></td><td>Was the transcript interpreted correctly?</td><td>Correct transcript, wrong intent.</td></tr>
+      <tr><td><strong>Tool selection</strong></td><td>Did the agent choose the right function?</td><td>Calls cancel instead of reschedule.</td></tr>
+      <tr><td><strong>Parameters</strong></td><td>Were date, time, ID and other fields correct?</td><td>Timezone shifts appointment by one hour.</td></tr>
+      <tr><td><strong>API / backend</strong></td><td>Did the business system execute successfully?</td><td>API returns 500 or wrong availability.</td></tr>
+      <tr><td><strong>TTS</strong></td><td>Was the final response spoken correctly?</td><td>Correct text, incorrect pronunciation.</td></tr>
+      <tr><td><strong>Latency</strong></td><td>How long did the complete turn take?</td><td>Agent waits 4 seconds before responding.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Representative test scenarios</h3>
+  <ul class="checklist">
+    <li>Book a normal appointment — happy path.</li>
+    <li>User changes date halfway through the conversation.</li>
+    <li>User interrupts while the agent is speaking (barge-in).</li>
+    <li>Background noise affects recognition.</li>
+    <li>API fails after the agent already told the user it was processing the request.</li>
+    <li>Agent must not claim success unless the tool/backend confirms success.</li>
+    <li>Prompt update improves one intent but breaks another — regression test.</li>
+  </ul>
+
+  <div class="code">
+TEST ID: VA-BOOK-017
+Risk: Wrong booking created
+Input: "Book me next Tuesday at 3 PM"
+Expected:
+  - STT transcript correct
+  - intent = book_appointment
+  - date = next Tuesday
+  - time = 15:00
+  - booking API returns success
+  - spoken confirmation matches backend record
+Evidence:
+  transcript + tool call + API response + final audio + latency
+  </div>
+</section>
+
+<section id="smart-contract-case-study">
+  <div class="kicker">10 · Case Study B</div>
+  <h2>Smart contract + IoT supply-chain testing</h2>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">Physical Event</div><div class="arrow">→</div>
+      <div class="node">IoT Sensor</div><div class="arrow">→</div>
+      <div class="node">Gateway / API</div><div class="arrow">→</div>
+      <div class="node">Smart Contract</div><div class="arrow">→</div>
+      <div class="node">Blockchain / DLT</div><div class="arrow">→</div>
+      <div class="node">Supply-chain State</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Risk</th><th>Best test type</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>Contract logic incorrect</td><td>Unit / component</td><td>Payment must release only after valid delivery condition.</td></tr>
+      <tr><td>Sensor sends invalid data</td><td>Negative / boundary</td><td>Temperature value outside physically valid range.</td></tr>
+      <tr><td>Sensor event never reaches contract</td><td>Integration</td><td>Gateway/API failure prevents blockchain trigger.</td></tr>
+      <tr><td>Duplicate IoT event executes twice</td><td>Idempotency / integration</td><td>Same delivery event must not release payment twice.</td></tr>
+      <tr><td>Unauthorised party triggers contract</td><td>Security / access control</td><td>Only approved identity may update delivery status.</td></tr>
+      <tr><td>Network latency delays state update</td><td>Performance / resilience</td><td>Contract confirmation takes longer under load.</td></tr>
+      <tr><td>Complete business process fails</td><td>E2E</td><td>Shipment event → contract execution → payment/status update.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <strong>Key lesson:</strong> when cyber-physical systems are involved, testing must cover the physical signal,
+    integration layer, business logic, trust boundary, and final business state — not only the smart-contract code.
+  </div>
+</section>
+
+<section id="test-design">
+  <div class="kicker">11 · Practical Test Design</div>
+  <h2>A compact framework for designing tests</h2>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <strong>Happy path</strong>
+      What should work under normal conditions?
+    </div>
+    <div class="card">
+      <strong>Negative path</strong>
+      What invalid input should be rejected safely?
+    </div>
+    <div class="card">
+      <strong>Boundary</strong>
+      What happens at minimum/maximum limits?
+    </div>
+    <div class="card">
+      <strong>Dependency failure</strong>
+      What if an API, database, model or cloud service fails?
+    </div>
+    <div class="card">
+      <strong>State change</strong>
+      What if the user changes their mind midway?
+    </div>
+    <div class="card">
+      <strong>Security / abuse</strong>
+      What happens when a user attempts an unauthorised action?
+    </div>
+    <div class="card">
+      <strong>Performance</strong>
+      Does the feature still work under realistic load?
+    </div>
+    <div class="card">
+      <strong>Observability</strong>
+      If it fails, can engineers prove where and why?
+    </div>
+  </div>
+</section>
+
+<section id="defect-reporting">
+  <div class="kicker">12 · Defect Reporting</div>
+  <h2>What a strong bug report looks like</h2>
+
+  <div class="code">
+TITLE
+Voice agent creates 17:00 booking when caller requests 15:00
+
+ENVIRONMENT
+Staging / Agent build X
+
+PRECONDITION
+Caller has valid customer profile
+
+STEPS
+1. Call agent
+2. Say: "Please book Tuesday at three in the afternoon"
+3. Confirm requested slot
+
+EXPECTED
+Booking created at 15:00
+
+ACTUAL
+Booking created at 17:00
+
+EVIDENCE
+- STT transcript: correct
+- LLM extracted time: 15:00
+- API payload: 17:00
+- Backend record: 17:00
+
+IMPACT
+Incorrect customer booking
+
+LIKELY FAILURE LAYER
+Tool parameter transformation / timezone handling
+  </div>
+
+  <div class="callout">
+    Strong testers reduce debugging time by attaching evidence that narrows the failure to a specific layer.
+  </div>
+</section>
+
+<section id="discussion-points">
+  <div class="kicker">13 · Key Discussion Points</div>
+  <h2>Concepts worth being able to explain naturally</h2>
+
+  <ul class="checklist">
+    <li><strong>Testing is risk-based evidence, not only bug finding.</strong></li>
+    <li><strong>Testing should happen throughout the SDLC, not only after development.</strong></li>
+    <li><strong>Unit → integration → system → E2E</strong> represents increasing realism and usually increasing cost.</li>
+    <li><strong>Retest</strong> confirms a fix; <strong>regression</strong> checks that the change did not break other behaviour.</li>
+    <li><strong>Functional</strong> tests what the system does; <strong>non-functional</strong> tests qualities such as speed, security and reliability.</li>
+    <li><strong>Cloud testing</strong> must consider distributed failure, scaling, resilience and configuration — not just application screens.</li>
+    <li><strong>Pen testing</strong> validates exploitable security risk under authorised scope; it is different from broad vulnerability scanning.</li>
+    <li><strong>Automation</strong> is strongest for repeatable checks; human testers remain important for exploration, ambiguity and user experience.</li>
+    <li><strong>AI/voice systems require layer-by-layer diagnosis:</strong> STT, model reasoning, tool calls, backend behaviour, TTS and latency.</li>
+    <li><strong>Observability is part of testability.</strong> A system that cannot explain its failures is harder and more expensive to validate.</li>
+  </ul>
+</section>
+
+<section id="memory-map">
+  <div class="kicker">14 · One-page Memory Map</div>
+  <h2>If I remember only one structure</h2>
+
+  <div class="diagram">
+    <div class="flow" style="justify-content:center">
+      <div class="node">WHAT?<br><span class="small">Functional</span></div>
+      <div class="arrow">+</div>
+      <div class="node">HOW WELL?<br><span class="small">Non-functional</span></div>
+      <div class="arrow">+</div>
+      <div class="node">WHERE?<br><span class="small">Unit → E2E</span></div>
+      <div class="arrow">+</div>
+      <div class="node">WHEN?<br><span class="small">Across SDLC</span></div>
+      <div class="arrow">+</div>
+      <div class="node">WHY?<br><span class="small">Risk & evidence</span></div>
+    </div>
+  </div>
+
+  <p style="margin-top:18px">
+    Whenever I encounter a new feature, I can ask:
+    <strong>What can fail? At which layer? Which test gives the cheapest reliable evidence?
+    What business impact would failure create? What evidence will help an engineer diagnose it?</strong>
+  </p>
+</section>
+
+<div class="footer">
+  Software Testing Fundamentals — Practical Mental Model · HTML learning note
+</div>
+
+</div>
+</body>
+</html>

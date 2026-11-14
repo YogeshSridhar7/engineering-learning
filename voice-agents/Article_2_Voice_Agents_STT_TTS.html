@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How STT + TTS Create a Voice Agent — Architecture, Testing and Mental Models</title>
+
+<style>
+:root{
+  --paper:#f4f2ec;
+  --surface:#fbfaf7;
+  --ink:#22251f;
+  --muted:#666a63;
+  --line:#d9d6cf;
+  --line-strong:#c7c3ba;
+  --accent:#3d4a43;
+  --accent-soft:#e9ece8;
+  --accent-deep:#2f3833;
+  --code:#272b28;
+  --table-head:#ece9e2;
+  --shadow:0 10px 28px rgba(35,39,34,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:17px;
+  line-height:1.72;
+  letter-spacing:.002em;
+}
+.container{
+  width:min(100%,1180px);
+  margin:0 auto;
+  padding:42px 28px 88px;
+}
+.hero{
+  background:var(--surface);
+  color:var(--ink);
+  border:1px solid var(--line-strong);
+  border-radius:6px;
+  padding:52px 58px 46px;
+  box-shadow:var(--shadow);
+}
+.eyebrow{
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.76rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  font-weight:700;
+  color:var(--accent);
+  margin-bottom:18px;
+}
+h1,h2,h3{
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--ink);
+  letter-spacing:-.012em;
+}
+h1{
+  font-size:clamp(2.25rem,4.2vw,4.1rem);
+  line-height:1.04;
+  font-weight:650;
+  margin:0 0 20px;
+  max-width:940px;
+}
+.hero p{
+  max-width:860px;
+  color:#4d514c;
+  font-size:1.07rem;
+  margin:0;
+}
+.disclosure{
+  margin-top:26px;
+  padding-top:18px;
+  border-top:1px solid var(--line);
+  color:var(--muted);
+  font-size:.9rem;
+  line-height:1.55;
+}
+section{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:6px;
+  margin-top:22px;
+  padding:34px 38px 36px;
+  box-shadow:0 4px 14px rgba(35,39,34,.025);
+}
+section > *{
+  max-width:920px;
+}
+section > .table-wrap,
+section > .diagram,
+section > .grid,
+section > .pyramid,
+section > .timeline,
+section > .code{
+  max-width:none;
+}
+h2{
+  font-size:1.72rem;
+  line-height:1.25;
+  font-weight:650;
+  margin:0 0 14px;
+}
+h3{
+  font-size:1.08rem;
+  line-height:1.4;
+  font-weight:700;
+  margin:28px 0 10px;
+  text-transform:none;
+}
+p{margin:9px 0 15px}
+.kicker{
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--accent);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:.74rem;
+  margin-bottom:10px;
+}
+.small{font-size:.88rem;color:var(--muted)}
+.callout{
+  background:#f1f0eb;
+  border-left:3px solid var(--accent);
+  padding:16px 18px;
+  border-radius:2px;
+  margin:22px 0;
+  color:#3f433e;
+}
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{
+  border:1px solid var(--line);
+  background:#fdfcf9;
+  border-radius:4px;
+  padding:18px 20px;
+}
+.card strong{
+  display:block;
+  margin-bottom:7px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.95rem;
+  color:var(--accent-deep);
+}
+.table-wrap{
+  overflow-x:auto;
+  margin-top:16px;
+  border:1px solid var(--line);
+  border-radius:4px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.91rem;
+  background:#fffefb;
+}
+th,td{
+  padding:12px 14px;
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  text-align:left;
+  vertical-align:top;
+}
+th:last-child,td:last-child{border-right:0}
+tr:last-child td{border-bottom:0}
+th{
+  background:var(--table-head);
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:700;
+  color:#30342f;
+}
+tr:nth-child(even) td{background:#faf9f5}
+.diagram{
+  background:#f8f7f3;
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:22px;
+  overflow:auto;
+  margin-top:18px;
+}
+.flow{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex-wrap:wrap;
+}
+.node{
+  background:#fffefb;
+  border:1px solid var(--line-strong);
+  border-radius:3px;
+  padding:11px 13px;
+  min-width:128px;
+  text-align:center;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.86rem;
+  font-weight:650;
+  color:#353a35;
+}
+.node.blue{
+  background:var(--accent-soft);
+  border-color:#bcc3bd;
+}
+.arrow{
+  color:#777d77;
+  font-weight:700;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.pyramid{max-width:760px;margin:22px auto 0}
+.level{
+  margin:8px auto;
+  padding:11px 16px;
+  text-align:center;
+  border-radius:3px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.88rem;
+  font-weight:700;
+  border:1px solid #c9c6be;
+}
+.level.l1{width:38%;background:#3c453f;color:#fff}
+.level.l2{width:62%;background:#68726c;color:#fff}
+.level.l3{width:84%;background:#a5aba7;color:#1f231f}
+.level.l4{width:100%;background:#e5e4df;color:#252925}
+.timeline{
+  display:grid;
+  grid-template-columns:155px 1fr;
+  gap:0 22px;
+  margin-top:14px;
+}
+.time{
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:700;
+  color:var(--accent-deep);
+  padding:10px 14px 10px 0;
+  border-right:1px solid var(--line-strong);
+}
+.event{padding:10px 0 18px}
+.code{
+  background:var(--code);
+  color:#efefe9;
+  border-radius:4px;
+  padding:17px 18px;
+  font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  font-size:.84rem;
+  line-height:1.55;
+  overflow:auto;
+  white-space:pre-wrap;
+  border:1px solid #1d211e;
+}
+.checklist{padding-left:21px}
+.checklist li{margin:7px 0}
+.legend{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.badge,.pill{
+  display:inline-block;
+  padding:4px 8px;
+  margin:2px 3px 2px 0;
+  border-radius:999px;
+  background:#eeece6;
+  border:1px solid #d5d1c8;
+  color:#454a45;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.72rem;
+  font-weight:650;
+}
+.metric{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  border-bottom:1px solid var(--line);
+  padding:9px 0;
+}
+.metric:last-child{border-bottom:0}
+.metric span:first-child{
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:650;
+  font-size:.9rem;
+}
+.layer{
+  border:1px solid var(--line);
+  border-radius:3px;
+  padding:14px 16px;
+  margin:9px 0;
+  background:#fbfaf6;
+}
+.layer b{color:var(--accent-deep)}
+a{color:#38463f;text-decoration:none;border-bottom:1px solid #a9afa9}
+a:hover{color:#1f2924;border-bottom-color:#1f2924}
+.footer{
+  color:var(--muted);
+  font-size:.86rem;
+  margin-top:30px;
+  text-align:center;
+  font-family:Arial,Helvetica,sans-serif;
+}
+#contents table td{
+  width:50%;
+  background:#fbfaf6;
+}
+#contents a{
+  display:block;
+  padding:2px 0;
+  border-bottom:0;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:.9rem;
+  font-weight:600;
+}
+@media(max-width:880px){
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .hero{padding:34px 28px}
+  section{padding:28px 24px}
+  .container{padding:24px 14px 60px}
+  .timeline{grid-template-columns:1fr}
+  .time{border-right:0;border-bottom:1px solid var(--line);padding-bottom:5px}
+  #contents table td{display:block;width:100%}
+}
+@media print{
+  body{background:#fff;font-size:11.5pt}
+  .container{max-width:none;padding:0}
+  .hero,section{box-shadow:none;border-color:#bbb;break-inside:avoid}
+  a{color:#000;border:0}
+}
+</style>
+
+</head>
+
+<body>
+<div class="container">
+
+<header class="hero">
+  <div class="eyebrow">Voice Agent Engineering · Article 2</div>
+  <h1>How STT + TTS Create a Voice Agent</h1>
+  <p>
+    A practical mental model for understanding Speech-to-Text, Text-to-Speech,
+    conversational AI, tool calling, streaming, latency, failure modes and how to test
+    an end-to-end voice-agent system.
+  </p>
+  <div class="disclosure">
+    <strong>Author:</strong> Yogesh Sridhar<br>
+    <strong>Disclosure:</strong> AI-assisted for structuring, editing and presentation.
+    The ideas, learning, examples, interpretations and conclusions are the author's own.
+  </div>
+</header>
+
+<section id="contents">
+  <div class="kicker">Contents</div>
+  <h2>Table of Contents</h2>
+  <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr><td><a href="#mental-model">1. Voice-Agent Mental Model</a></td><td><a href="#stt">2. What STT Does</a></td></tr>
+        <tr><td><a href="#stt-types">3. Types of STT</a></td><td><a href="#streaming-stt">4. Streaming STT</a></td></tr>
+        <tr><td><a href="#tts">5. What TTS Does</a></td><td><a href="#tts-types">6. Types of TTS</a></td></tr>
+        <tr><td><a href="#full-agent">7. Full Voice-Agent Pipeline</a></td><td><a href="#architectures">8. Cascaded vs Speech-to-Speech</a></td></tr>
+        <tr><td><a href="#latency">9. Latency</a></td><td><a href="#turn-taking">10. Turn-taking &amp; Barge-in</a></td></tr>
+        <tr><td><a href="#testing-model">11. Testing Mental Model</a></td><td><a href="#stt-matrix">12. STT Test Matrix</a></td></tr>
+        <tr><td><a href="#tts-matrix">13. TTS Test Matrix</a></td><td><a href="#case-study">14. End-to-End Case Study</a></td></tr>
+        <tr><td><a href="#failure-scenarios">15. Failure Scenarios</a></td><td><a href="#terminology">16. Voice-Agent Terminology</a></td></tr>
+        <tr><td><a href="#memory-map">17. One-page Memory Map</a></td><td><a href="#discussion-points">18. Key Discussion Points</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<section id="mental-model">
+  <div class="kicker">1 · The Mental Model</div>
+  <h2>A voice agent is a real-time pipeline</h2>
+
+  <p>
+    The easiest way to understand a modern voice agent is to stop thinking of it as one AI system.
+    It is usually a chain of specialised components that must cooperate in real time.
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">Caller</div>
+      <div class="arrow">→</div>
+      <div class="node blue">Audio Input</div>
+      <div class="arrow">→</div>
+      <div class="node">STT</div>
+      <div class="arrow">→</div>
+      <div class="node">LLM / Agent</div>
+      <div class="arrow">→</div>
+      <div class="node">Tools / APIs</div>
+      <div class="arrow">→</div>
+      <div class="node">Response Text</div>
+      <div class="arrow">→</div>
+      <div class="node">TTS</div>
+      <div class="arrow">→</div>
+      <div class="node blue">Audio Output</div>
+      <div class="arrow">→</div>
+      <div class="node">Caller</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Core idea:</strong> STT converts speech into machine-readable text.
+    The agent decides what the user means and what action to take.
+    TTS converts the response back into natural speech.
+  </div>
+</section>
+
+<section id="stt">
+  <div class="kicker">2 · What STT Does</div>
+  <h2>Speech-to-Text: audio → words</h2>
+
+  <p>
+    Speech-to-Text (STT), also called Automatic Speech Recognition (ASR),
+    converts spoken audio into a transcript that software can process.
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">Microphone / Call Audio</div>
+      <div class="arrow">→</div>
+      <div class="node">Audio Pre-processing</div>
+      <div class="arrow">→</div>
+      <div class="node">Voice Activity Detection</div>
+      <div class="arrow">→</div>
+      <div class="node">Speech Recognition Model</div>
+      <div class="arrow">→</div>
+      <div class="node">Transcript</div>
+    </div>
+  </div>
+
+  <h3>Important STT functions</h3>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Function</th><th>Purpose</th><th>Voice-agent example</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Audio capture</strong></td><td>Receives the caller's sound signal.</td><td>Phone audio arrives as a live stream.</td></tr>
+      <tr><td><strong>Noise suppression</strong></td><td>Reduces background sounds.</td><td>Car noise or café noise is reduced.</td></tr>
+      <tr><td><strong>Echo cancellation</strong></td><td>Prevents the agent's own voice being recognised as caller speech.</td><td>TTS playback should not trigger STT incorrectly.</td></tr>
+      <tr><td><strong>VAD</strong></td><td>Detects whether speech is happening.</td><td>Agent knows when the caller begins and stops speaking.</td></tr>
+      <tr><td><strong>Recognition</strong></td><td>Maps audio patterns to words.</td><td>“Book me Thursday at three” becomes text.</td></tr>
+      <tr><td><strong>Language detection</strong></td><td>Determines spoken language where supported.</td><td>Caller switches from English to another language.</td></tr>
+      <tr><td><strong>Diarisation</strong></td><td>Separates speakers in multi-speaker audio.</td><td>Useful for recorded calls or meeting transcription.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="stt-types">
+  <div class="kicker">3 · Types of STT</div>
+  <h2>Not all speech recognition behaves the same</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>STT type</th><th>How it works</th><th>Best use</th><th>Main trade-off</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Batch STT</strong></td><td>Processes a completed audio file.</td><td>Meetings, podcasts, recorded calls.</td><td>Not suitable for live conversation.</td></tr>
+      <tr><td><strong>Streaming STT</strong></td><td>Processes small audio chunks continuously.</td><td>Real-time voice agents.</td><td>Must balance speed and transcript stability.</td></tr>
+      <tr><td><strong>Cloud STT</strong></td><td>Audio is processed by remote infrastructure.</td><td>Scalable production systems.</td><td>Network, latency and data-handling considerations.</td></tr>
+      <tr><td><strong>On-device STT</strong></td><td>Recognition runs locally.</td><td>Privacy-sensitive or offline cases.</td><td>Limited local compute may constrain models.</td></tr>
+      <tr><td><strong>General-purpose STT</strong></td><td>Optimised for everyday language.</td><td>Broad consumer use.</td><td>May struggle with specialist terminology.</td></tr>
+      <tr><td><strong>Domain-adapted STT</strong></td><td>Optimised for specialist vocabulary.</td><td>Medical, financial, legal domains.</td><td>Needs suitable domain context/data.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="streaming-stt">
+  <div class="kicker">4 · Streaming STT</div>
+  <h2>Why live agents need partial transcripts</h2>
+
+  <p>
+    In a live conversation, the system cannot wait until the entire call has finished.
+    Streaming STT produces interim text while the user is still speaking.
+  </p>
+
+  <div class="code">Caller audio:
+"I'd like to book an appointment tomorrow afternoon."
+
+Possible streaming transcript:
+0.5s  → "I'd like"
+0.9s  → "I'd like to book"
+1.4s  → "I'd like to book an appointment"
+2.0s  → "I'd like to book an appointment tomorrow afternoon"
+
+Final transcript:
+"I'd like to book an appointment tomorrow afternoon."</div>
+
+  <div class="callout">
+    <strong>Testing question:</strong> does the agent act too early on an unstable partial transcript,
+    or does it wait long enough to understand the complete user intent?
+  </div>
+</section>
+
+<section id="tts">
+  <div class="kicker">5 · What TTS Does</div>
+  <h2>Text-to-Speech: words → spoken audio</h2>
+
+  <p>
+    Text-to-Speech (TTS) performs the reverse transformation.
+    It converts text generated by the agent into spoken audio.
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">Response Text</div>
+      <div class="arrow">→</div>
+      <div class="node">Text Normalisation</div>
+      <div class="arrow">→</div>
+      <div class="node">Pronunciation</div>
+      <div class="arrow">→</div>
+      <div class="node">Prosody / Timing</div>
+      <div class="arrow">→</div>
+      <div class="node">Audio Generation</div>
+      <div class="arrow">→</div>
+      <div class="node">Caller Hears Voice</div>
+    </div>
+  </div>
+
+  <h3>Important TTS functions</h3>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Function</th><th>What it solves</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Text normalisation</strong></td><td>Converts written symbols into speakable forms.</td><td>£250 → “two hundred and fifty pounds”.</td></tr>
+      <tr><td><strong>Pronunciation</strong></td><td>Determines how words and names should sound.</td><td>Customer names, medication names, business names.</td></tr>
+      <tr><td><strong>Prosody</strong></td><td>Controls rhythm, stress, pitch and pauses.</td><td>A confirmation should sound clear, not rushed.</td></tr>
+      <tr><td><strong>Voice style</strong></td><td>Controls delivery character.</td><td>Calm, friendly, professional tone.</td></tr>
+      <tr><td><strong>Streaming synthesis</strong></td><td>Generates audio before the full response is complete.</td><td>Agent begins speaking sooner.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="tts-types">
+  <div class="kicker">6 · Types of TTS</div>
+  <h2>From older synthesis to neural speech</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>TTS type</th><th>Description</th><th>Typical characteristic</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Concatenative</strong></td><td>Combines recorded speech fragments.</td><td>Can sound natural locally but transitions may feel robotic.</td></tr>
+      <tr><td><strong>Parametric</strong></td><td>Uses mathematical speech models.</td><td>Compact, historically less natural.</td></tr>
+      <tr><td><strong>Neural TTS</strong></td><td>Deep neural models generate speech.</td><td>Natural rhythm, tone and pronunciation.</td></tr>
+      <tr><td><strong>Streaming TTS</strong></td><td>Produces speech chunks as text arrives.</td><td>Important for low-latency voice agents.</td></tr>
+      <tr><td><strong>Pre-generated TTS</strong></td><td>Audio is created ahead of time.</td><td>Useful for fixed prompts with almost zero synthesis delay.</td></tr>
+      <tr><td><strong>Custom / authorised voice</strong></td><td>Uses a specific approved voice identity or style.</td><td>Brand consistency; requires appropriate consent and controls.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="full-agent">
+  <div class="kicker">7 · Full Voice Agent</div>
+  <h2>How STT + LLM + tools + TTS work together</h2>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">1. Caller speaks</div>
+      <div class="arrow">→</div>
+      <div class="node">2. STT transcript</div>
+      <div class="arrow">→</div>
+      <div class="node">3. Agent identifies intent</div>
+      <div class="arrow">→</div>
+      <div class="node">4. Tool/API called</div>
+      <div class="arrow">→</div>
+      <div class="node">5. Backend result</div>
+      <div class="arrow">→</div>
+      <div class="node">6. Response generated</div>
+      <div class="arrow">→</div>
+      <div class="node">7. TTS speaks</div>
+    </div>
+  </div>
+
+  <h3>Example: booking an appointment</h3>
+
+  <div class="code">CALLER
+"Can you book me next Tuesday at three?"
+
+STT
+"Can you book me next Tuesday at three?"
+
+AGENT / LLM
+Intent: book_appointment
+Date: next Tuesday
+Time: 15:00
+
+TOOL CALL
+check_availability(date=..., time="15:00")
+
+BACKEND
+Available = true
+
+TOOL CALL
+book_appointment(...)
+
+BACKEND
+Booking confirmed
+
+AGENT RESPONSE
+"Your appointment is booked for Tuesday at 3 PM."
+
+TTS
+Spoken confirmation to caller</div>
+</section>
+
+<section id="architectures">
+  <div class="kicker">8 · Two Architectures</div>
+  <h2>Cascaded voice agents vs speech-to-speech systems</h2>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <strong>Cascaded architecture</strong>
+      <p>Speech → STT → LLM → TTS → Speech</p>
+      <span class="badge">Easy to inspect</span>
+      <span class="badge">Clear transcripts</span>
+      <span class="badge">Separate vendors possible</span>
+      <span class="badge">Strong debugging visibility</span>
+      <p class="small">Good for understanding which individual layer caused a defect.</p>
+    </div>
+
+    <div class="card">
+      <strong>Speech-to-speech architecture</strong>
+      <p>Speech → multimodal audio model → Speech</p>
+      <span class="badge">More direct</span>
+      <span class="badge">Natural timing</span>
+      <span class="badge">Can use acoustic cues</span>
+      <span class="badge">Harder to isolate internals</span>
+      <p class="small">Potentially better at tone, hesitation and natural interaction, but testing may require different observability.</p>
+    </div>
+  </div>
+</section>
+
+<section id="latency">
+  <div class="kicker">9 · Latency</div>
+  <h2>Voice quality is also a timing problem</h2>
+
+  <p>
+    A voice agent can produce the correct answer and still feel poor if the delay is too long.
+    Total response time is created by several layers.
+  </p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="node">End-of-turn detection</div>
+      <div class="arrow">+</div>
+      <div class="node">STT</div>
+      <div class="arrow">+</div>
+      <div class="node">LLM</div>
+      <div class="arrow">+</div>
+      <div class="node">Tool/API</div>
+      <div class="arrow">+</div>
+      <div class="node">TTS</div>
+      <div class="arrow">+</div>
+      <div class="node">Network</div>
+      <div class="arrow">=</div>
+      <div class="node blue">Perceived delay</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:18px">
+    <div class="card">
+      <strong>Useful latency metrics</strong>
+      <div class="metric"><span>Time to first transcript</span><span class="pill">STT</span></div>
+      <div class="metric"><span>End-of-turn detection</span><span class="pill">Conversation</span></div>
+      <div class="metric"><span>Time to first token</span><span class="pill">LLM</span></div>
+      <div class="metric"><span>Tool response time</span><span class="pill">API</span></div>
+      <div class="metric"><span>Time to first audio</span><span class="pill">TTS</span></div>
+      <div class="metric"><span>Total turn latency</span><span class="pill">E2E</span></div>
+    </div>
+
+    <div class="card">
+      <strong>Example diagnostic breakdown</strong>
+      <div class="code">STT              280 ms
+Turn detection    220 ms
+LLM              520 ms
+Booking API      410 ms
+TTS              290 ms
+Network          180 ms
+-----------------------
+Total          1,900 ms</div>
+    </div>
+  </div>
+</section>
+
+<section id="turn-taking">
+  <div class="kicker">10 · Turn Taking</div>
+  <h2>Real conversation is not clean turn-by-turn text</h2>
+
+  <div class="grid grid-3">
+    <div class="card">
+      <strong>Voice Activity Detection</strong>
+      Detects whether the caller is speaking or silent.
+    </div>
+    <div class="card">
+      <strong>End-of-turn detection</strong>
+      Decides whether the caller has finished their thought.
+    </div>
+    <div class="card">
+      <strong>Barge-in</strong>
+      Allows the caller to interrupt the agent while TTS is speaking.
+    </div>
+  </div>
+
+  <div class="code">AGENT
+"Your appointment is currently scheduled for—"
+
+CALLER INTERRUPTS
+"Actually, cancel it."
+
+GOOD BEHAVIOUR
+1. Stop TTS playback
+2. Capture caller audio
+3. Recognise new intent
+4. Confirm cancellation requirement
+5. Call correct tool
+6. Give updated response</div>
+</section>
+
+<section id="testing-model">
+  <div class="kicker">11 · Testing Mental Model</div>
+  <h2>When something goes wrong, isolate the layer</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Layer</th><th>Question</th><th>Evidence</th><th>Example defect</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Audio</strong></td><td>Was the incoming signal usable?</td><td>Recording, codec, packet quality.</td><td>Call audio is clipped.</td></tr>
+      <tr><td><strong>VAD / turn detection</strong></td><td>Did the system detect speech boundaries correctly?</td><td>Speech timestamps.</td><td>Agent cuts user off after a pause.</td></tr>
+      <tr><td><strong>STT</strong></td><td>Was speech transcribed correctly?</td><td>Audio + transcript.</td><td>“Tuesday” → “Thursday”.</td></tr>
+      <tr><td><strong>Agent / LLM</strong></td><td>Was the meaning understood correctly?</td><td>Transcript + model decision.</td><td>Correct transcript but wrong intent.</td></tr>
+      <tr><td><strong>Tool selection</strong></td><td>Did the agent choose the right action?</td><td>Tool trace.</td><td>Calls cancel instead of reschedule.</td></tr>
+      <tr><td><strong>Tool parameters</strong></td><td>Were values passed correctly?</td><td>API request body.</td><td>15:00 becomes 17:00.</td></tr>
+      <tr><td><strong>Backend</strong></td><td>Did the business system succeed?</td><td>API response + database state.</td><td>Booking service returns 500.</td></tr>
+      <tr><td><strong>Response generation</strong></td><td>Did the agent describe the result truthfully?</td><td>Backend result + generated text.</td><td>Agent says “booked” after API failure.</td></tr>
+      <tr><td><strong>TTS</strong></td><td>Was text spoken correctly?</td><td>Response text + audio.</td><td>Correct date is pronounced incorrectly.</td></tr>
+      <tr><td><strong>Latency</strong></td><td>Was interaction fast enough?</td><td>Per-stage timings.</td><td>Four-second silence before response.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="stt-matrix">
+  <div class="kicker">12 · STT Test Matrix</div>
+  <h2>What to test in speech recognition</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Test area</th><th>Example</th><th>What you observe</th></tr></thead>
+    <tbody>
+      <tr><td>Accent</td><td>Different regional English accents.</td><td>Word and intent accuracy.</td></tr>
+      <tr><td>Speaking speed</td><td>Very fast or very slow speech.</td><td>Dropped or merged words.</td></tr>
+      <tr><td>Background noise</td><td>Street, car, TV, café.</td><td>Recognition stability.</td></tr>
+      <tr><td>Names</td><td>Customer and business names.</td><td>Proper noun accuracy.</td></tr>
+      <tr><td>Numbers</td><td>Phone number, time, amount.</td><td>Digit accuracy and formatting.</td></tr>
+      <tr><td>Dates</td><td>“Next Friday”, “the twenty-first”.</td><td>Transcript and downstream interpretation.</td></tr>
+      <tr><td>Corrections</td><td>“Tuesday — sorry, Wednesday.”</td><td>Latest intent retained.</td></tr>
+      <tr><td>Hesitation</td><td>“Erm... maybe Thursday.”</td><td>Turn-taking accuracy.</td></tr>
+      <tr><td>Silence</td><td>Caller says nothing.</td><td>Timeout / reprompt behaviour.</td></tr>
+      <tr><td>Multiple speakers</td><td>Two voices in background.</td><td>Speaker separation and robustness.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="tts-matrix">
+  <div class="kicker">13 · TTS Test Matrix</div>
+  <h2>What to test in generated speech</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Test area</th><th>Example</th><th>What good looks like</th></tr></thead>
+    <tbody>
+      <tr><td>Pronunciation</td><td>Names, technical words, addresses.</td><td>Correct and understandable speech.</td></tr>
+      <tr><td>Dates</td><td>21/09/2026.</td><td>Natural date reading.</td></tr>
+      <tr><td>Times</td><td>15:30.</td><td>Clear “three thirty PM” or configured style.</td></tr>
+      <tr><td>Money</td><td>£1,250.50.</td><td>Natural currency phrasing.</td></tr>
+      <tr><td>Pauses</td><td>Long confirmation sentence.</td><td>Natural phrase boundaries.</td></tr>
+      <tr><td>Speed</td><td>Instructions or disclosures.</td><td>Understandable pacing.</td></tr>
+      <tr><td>Tone</td><td>Customer support response.</td><td>Appropriate professional delivery.</td></tr>
+      <tr><td>Streaming</td><td>Long LLM answer.</td><td>Speech begins quickly without awkward joins.</td></tr>
+      <tr><td>Interruption</td><td>Caller speaks during TTS.</td><td>Playback stops promptly.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="case-study">
+  <div class="kicker">14 · Practical Case Study</div>
+  <h2>End-to-end appointment booking test</h2>
+
+  <div class="code">TEST ID
+VA-E2E-BOOK-021
+
+SCENARIO
+Caller books an appointment using natural speech.
+
+CALLER INPUT
+"Can you get me something next Thursday around three in the afternoon?"
+
+EXPECTED STT
+Accurate transcript.
+
+EXPECTED AGENT INTERPRETATION
+Intent = book appointment
+Date = next Thursday
+Preferred time ≈ 15:00
+
+EXPECTED TOOL BEHAVIOUR
+1. Check availability
+2. Present valid alternatives if exact time unavailable
+3. Book only after required confirmation
+
+EXPECTED BACKEND STATE
+Exactly one correct appointment exists.
+
+EXPECTED TTS
+Spoken confirmation matches the actual backend record.
+
+EVIDENCE TO CAPTURE
+Audio
+Transcript
+Turn timestamps
+Agent/tool trace
+API payload
+API response
+Final database state
+Generated response text
+TTS audio
+End-to-end latency</div>
+
+  <div class="callout">
+    <strong>Strong testing principle:</strong> never judge success only from what the voice agent says.
+    Verify the real business-system state behind the conversation.
+  </div>
+</section>
+
+<section id="failure-scenarios">
+  <div class="kicker">15 · Failure Scenarios</div>
+  <h2>Useful edge cases for voice-agent testing</h2>
+
+  <div class="grid grid-2">
+    <div class="card"><strong>User changes their mind</strong>“Actually, not Tuesday — make it Friday.”</div>
+    <div class="card"><strong>User interrupts</strong>Caller speaks while TTS is still playing.</div>
+    <div class="card"><strong>Ambiguous time</strong>“Book me at three.” Agent needs AM/PM or business context.</div>
+    <div class="card"><strong>API unavailable</strong>Booking service returns an error or timeout.</div>
+    <div class="card"><strong>Duplicate event</strong>Retry must not create the same booking twice.</div>
+    <div class="card"><strong>Long silence</strong>Agent should reprompt instead of hanging indefinitely.</div>
+    <div class="card"><strong>Wrong transcript</strong>Agent should confirm critical information where appropriate.</div>
+    <div class="card"><strong>Prompt regression</strong>A prompt change improves booking but breaks cancellations.</div>
+  </div>
+</section>
+
+<section id="terminology">
+  <div class="kicker">16 · Key Terminology</div>
+  <h2>Voice-agent terms worth knowing</h2>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Term</th><th>Meaning</th><th>Mental shortcut</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ASR / STT</strong></td><td>Automatic Speech Recognition / Speech-to-Text.</td><td>Speech → text.</td></tr>
+      <tr><td><strong>TTS</strong></td><td>Text-to-Speech.</td><td>Text → speech.</td></tr>
+      <tr><td><strong>VAD</strong></td><td>Voice Activity Detection.</td><td>Is someone speaking?</td></tr>
+      <tr><td><strong>Endpointing</strong></td><td>Determining when a spoken turn ends.</td><td>Have they finished?</td></tr>
+      <tr><td><strong>Barge-in</strong></td><td>User interrupts agent speech.</td><td>Stop talking and listen.</td></tr>
+      <tr><td><strong>Interim transcript</strong></td><td>Partial STT result that may still change.</td><td>Early guess.</td></tr>
+      <tr><td><strong>Final transcript</strong></td><td>STT result considered stable.</td><td>Committed text.</td></tr>
+      <tr><td><strong>WER</strong></td><td>Word Error Rate, a standard STT accuracy metric.</td><td>How wrong was the transcript?</td></tr>
+      <tr><td><strong>Prosody</strong></td><td>Rhythm, stress, pitch and speech timing.</td><td>How the sentence sounds.</td></tr>
+      <tr><td><strong>Time to first audio</strong></td><td>Delay before TTS begins playback.</td><td>How quickly the agent starts answering.</td></tr>
+      <tr><td><strong>Tool calling</strong></td><td>Agent invokes an external function/API.</td><td>Conversation → action.</td></tr>
+      <tr><td><strong>Turn latency</strong></td><td>Delay between caller finishing and useful agent response.</td><td>How responsive does it feel?</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="memory-map">
+  <div class="kicker">17 · One-Page Memory Map</div>
+  <h2>If I remember only one model</h2>
+
+  <div class="layer"><b>HEAR</b> — Audio, VAD and STT determine what the caller said.</div>
+  <div class="layer"><b>UNDERSTAND</b> — The agent/LLM identifies intent, entities and conversation context.</div>
+  <div class="layer"><b>ACT</b> — Tools/APIs perform the real business operation.</div>
+  <div class="layer"><b>VERIFY</b> — Backend response proves whether the operation succeeded.</div>
+  <div class="layer"><b>SPEAK</b> — TTS turns the truthful result into natural audio.</div>
+  <div class="layer"><b>MEASURE</b> — Latency, accuracy, task success and failures are captured end-to-end.</div>
+
+  <div class="callout">
+    When a voice-agent test fails, ask in this order:
+    <strong>Did it hear correctly? Understand correctly? Act correctly? Verify the real outcome?
+    Speak the right result? Do all of that quickly enough?</strong>
+  </div>
+</section>
+
+<section id="discussion-points">
+  <div class="kicker">18 · Key Discussion Points</div>
+  <h2>Concepts to be comfortable explaining</h2>
+
+  <ul>
+    <li>A voice agent is usually a pipeline, not a single model.</li>
+    <li>Streaming STT and streaming TTS are important because natural conversation is latency-sensitive.</li>
+    <li>STT accuracy alone is not enough; a correct transcript can still be misunderstood by the agent.</li>
+    <li>A tool call is the bridge between conversation and real business action.</li>
+    <li>Agent speech should never claim success unless the business system confirms success.</li>
+    <li>Barge-in, endpointing and VAD strongly affect how natural a voice agent feels.</li>
+    <li>Cascaded systems are easier to diagnose because each layer is observable.</li>
+    <li>Speech-to-speech systems may feel more natural but can require different testing and observability strategies.</li>
+    <li>End-to-end quality includes accuracy, latency, reliability, security, task completion and user experience.</li>
+    <li>The best bug reports identify the failing layer and attach the evidence needed to reproduce it.</li>
+  </ul>
+</section>
+
+<div class="footer">
+  How STT + TTS Create a Voice Agent — Architecture, Testing &amp; Mental Models
+</div>
+
+</div>
+</body>
+</html>
