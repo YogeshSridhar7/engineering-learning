@@ -1,10 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import { buildApp } from './app.js'
 import { GroundedAnswerProviderError } from './openai-answer.js'
+import { DeterministicGroundedAnswerAdapter } from './grounded-answer.js'
+import { LexicalRetriever } from './retrieval.js'
+import {
+  InMemorySourceStore,
+  ingestLeadershipSources,
+} from './source-ingestion.js'
+import { OllamaEmbeddingProviderError } from './semantic-retrieval.js'
+
+function buildTestApp(options: Parameters<typeof buildApp>[0] = {}) {
+  const sourceStore = new InMemorySourceStore()
+  ingestLeadershipSources(sourceStore)
+  return buildApp({
+    retriever: new LexicalRetriever(sourceStore),
+    answerAdapter: new DeterministicGroundedAnswerAdapter(),
+    ...options,
+  })
+}
 
 describe('learning source API', () => {
   it('lists approved learning sources and their bounded excerpts', async () => {
-    const app = buildApp()
+    const app = buildTestApp()
 
     const response = await app.inject({
       method: 'GET',
@@ -21,7 +38,7 @@ describe('learning source API', () => {
   })
 
   it('adds and removes an approved custom source', async () => {
-    const app = buildApp()
+    const app = buildTestApp()
 
     const createResponse = await app.inject({
       method: 'POST',
@@ -50,7 +67,7 @@ describe('learning source API', () => {
   })
 
   it('rejects prohibited source text and malformed requests', async () => {
-    const app = buildApp()
+    const app = buildTestApp()
 
     const prohibitedResponse = await app.inject({
       method: 'POST',
@@ -77,7 +94,7 @@ describe('learning source API', () => {
   })
 
   it('retrieves source evidence through the public API', async () => {
-    const app = buildApp()
+    const app = buildTestApp()
 
     const response = await app.inject({
       method: 'POST',
@@ -100,7 +117,7 @@ describe('learning source API', () => {
   })
 
   it('returns a grounded answer and citations through the public API', async () => {
-    const app = buildApp()
+    const app = buildTestApp()
 
     const response = await app.inject({
       method: 'POST',
@@ -127,7 +144,7 @@ describe('learning source API', () => {
   })
 
   it('returns a safe gateway error when the configured answer provider fails', async () => {
-    const app = buildApp({
+    const app = buildTestApp({
       answerAdapter: {
         answer: async () => {
           throw new GroundedAnswerProviderError('Provider returned an internal error')
@@ -148,6 +165,31 @@ describe('learning source API', () => {
       error: 'Answer generation is temporarily unavailable',
     })
     expect(response.body).not.toContain('internal error')
+
+    await app.close()
+  })
+
+  it('returns an explicit service error when local semantic retrieval is unavailable', async () => {
+    const app = buildTestApp({
+      retriever: {
+        async retrieve() {
+          throw new OllamaEmbeddingProviderError('Local model is unavailable')
+        },
+      },
+    })
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/retrieve',
+      payload: { question: 'How does psychological safety help a team?' },
+    })
+
+    expect(response.statusCode).toBe(503)
+    expect(response.json()).toEqual({
+      error:
+        'Semantic retrieval is temporarily unavailable. Check that local Ollama is running and the embedding model is installed.',
+    })
+    expect(response.body).not.toContain('Local model is unavailable')
 
     await app.close()
   })

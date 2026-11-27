@@ -77,14 +77,48 @@ describe('lexical knowledge retrieval', () => {
 
   it('retains conflicting sources in separate ranked results', () => {
     const store = new InMemorySourceStore()
-    ingestLeadershipSources(store)
+    const firstSource = {
+      id: 'direct-feedback',
+      title: 'Direct feedback guide',
+      author: 'Source one',
+      url: 'https://example.com/direct',
+      license: 'Owned test content',
+      retrievedAt: '2026-11-27',
+      notes: '',
+    }
+    const secondSource = {
+      ...firstSource,
+      id: 'indirect-feedback',
+      title: 'Indirect feedback guide',
+      author: 'Source two',
+      url: 'https://example.com/indirect',
+    }
+    store.addSource(firstSource, [{
+      id: 'direct-chunk',
+      sourceId: firstSource.id,
+      position: 0,
+      text: 'Feedback should be direct and immediate.',
+    }])
+    store.addSource(secondSource, [{
+      id: 'indirect-chunk',
+      sourceId: secondSource.id,
+      position: 0,
+      text: 'Feedback should be indirect and carefully delayed.',
+    }])
 
     const result = new LexicalRetriever(store).retrieve({
-      question: 'team impact dependability feedback',
-      limit: 3,
+      question: 'How should feedback be given?',
+      limit: 2,
     })
 
-    expect(result.results.length).toBeGreaterThanOrEqual(1)
+    expect(result.results.map((item) => item.sourceId)).toEqual([
+      'direct-feedback',
+      'indirect-feedback',
+    ])
+    expect(result.results.map((item) => item.excerpt)).toEqual([
+      'Feedback should be direct and immediate.',
+      'Feedback should be indirect and carefully delayed.',
+    ])
   })
 
   it('handles a misspelled psychological-safety term where possible', () => {

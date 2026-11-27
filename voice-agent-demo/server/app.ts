@@ -1,4 +1,8 @@
-import Fastify, { type FastifyInstance } from 'fastify'
+import Fastify, {
+  type FastifyInstance,
+  type FastifyReply,
+  type FastifyRequest,
+} from 'fastify'
 import cors from '@fastify/cors'
 import {
   chunkSourceText,
@@ -9,7 +13,7 @@ import {
   validateSourcePolicy,
 } from './source-ingestion.js'
 import type { LearningSource } from './source-ingestion.js'
-import { LexicalRetriever, type RetrievalResponse } from './retrieval.js'
+import type { RetrievalAdapter, RetrievalResponse } from './retrieval.js'
 import {
   createGroundedAnswerAdapter,
   GroundedAnswerProviderError,
@@ -19,16 +23,23 @@ import {
   LearningSessionStore,
   toSessionEvidence,
 } from './learning-sessions.js'
+import {
+  createSemanticRetriever,
+  OllamaEmbeddingProviderError,
+} from './semantic-retrieval.js'
 
 export function buildApp(
-  options: { answerAdapter?: GroundedAnswerAdapter } = {},
+  options: {
+    answerAdapter?: GroundedAnswerAdapter
+    retriever?: RetrievalAdapter
+  } = {},
 ): FastifyInstance {
   const app = Fastify({
     logger: true,
   })
   const learningSources = new InMemorySourceStore()
   ingestLeadershipSources(learningSources)
-  const retriever = new LexicalRetriever(learningSources)
+  const retriever = options.retriever ?? createSemanticRetriever(learningSources)
   const answerAdapter = options.answerAdapter ?? createGroundedAnswerAdapter()
   const learningSessions = new LearningSessionStore()
 
@@ -74,6 +85,23 @@ export function buildApp(
     return reply.send({ sessionId, cleared: true })
   })
 
+  app.get('/api/sessions/:sessionId/transcript', async (request, reply) => {
+    const { sessionId } = request.params as { sessionId: string }
+    const session = learningSessions.get(sessionId)
+    if (!session) {
+      return reply.code(404).send({ error: 'Learning session not found' })
+    }
+
+    return reply.send({
+      sessionId,
+      turns: session.turns.map((turn) => ({
+        question: turn.question,
+        answer: turn.answer,
+        evidence: turn.evidence,
+      })),
+    })
+  })
+
   app.post('/api/sessions/:sessionId/turns', async (request, reply) => {
     const { sessionId } = request.params as { sessionId: string }
     const session = learningSessions.get(sessionId)
@@ -109,14 +137,12 @@ export function buildApp(
 
     let retrieval: RetrievalResponse
     try {
-      retrieval = retriever.retrieve({
+      retrieval = await retriever.retrieve({
         question: retrievalQuestion,
         limit: 3,
       })
     } catch (error) {
-      return reply.code(400).send({
-        error: error instanceof Error ? error.message : 'Retrieval failed',
-      })
+      return sendRetrievalError(request, reply, error)
     }
 
     try {
@@ -163,15 +189,13 @@ export function buildApp(
     }
 
     try {
-      return reply.send(retriever.retrieve({
+      return reply.send(await retriever.retrieve({
         question: body.question,
         sourceId: body.sourceId,
         limit: body.limit,
       }))
     } catch (error) {
-      return reply.code(400).send({
-        error: error instanceof Error ? error.message : 'Retrieval failed',
-      })
+      return sendRetrievalError(request, reply, error)
     }
   })
 
@@ -188,15 +212,13 @@ export function buildApp(
 
     let retrieval: RetrievalResponse
     try {
-      retrieval = retriever.retrieve({
+      retrieval = await retriever.retrieve({
         question: body.question,
         sourceId: body.sourceId,
         limit: body.limit ?? 3,
       })
     } catch (error) {
-      return reply.code(400).send({
-        error: error instanceof Error ? error.message : 'Retrieval failed',
-      })
+      return sendRetrievalError(request, reply, error)
     }
 
     try {
@@ -306,4 +328,21 @@ export function buildApp(
   })
 
   return app
+}
+
+function sendRetrievalError(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  error: unknown,
+) {
+  if (error instanceof OllamaEmbeddingProviderError) {
+    request.log.error({ err: error }, 'Semantic retrieval provider failed')
+    return reply.code(503).send({
+      error:
+        'Semantic retrieval is temporarily unavailable. Check that local Ollama is running and the embedding model is installed.',
+    })
+  }
+  return reply.code(400).send({
+    error: error instanceof Error ? error.message : 'Retrieval failed',
+  })
 }

@@ -25,6 +25,10 @@ export interface RetrievalResponse {
   results: RetrievalResult[]
 }
 
+export interface RetrievalAdapter {
+  retrieve(request: RetrievalRequest): RetrievalResponse | Promise<RetrievalResponse>
+}
+
 const STOP_WORDS = new Set([
   'a', 'an', 'and', 'are', 'as', 'at', 'be', 'can', 'do', 'for', 'how',
   'i', 'in', 'is', 'it', 'me', 'my', 'of', 'on', 'or', 'the', 'to',
@@ -58,7 +62,7 @@ function isApproximateTerm(left: string, right: string): boolean {
   return true
 }
 
-export class LexicalRetriever {
+export class LexicalRetriever implements RetrievalAdapter {
   constructor(private readonly store: InMemorySourceStore) {}
 
   retrieve(request: RetrievalRequest): RetrievalResponse {

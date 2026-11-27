@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  OllamaGroundedAnswerAdapter,
   OpenAICompatibleGroundedAnswerAdapter,
   type ChatCompletionResponse,
 } from './openai-answer.js'
@@ -55,6 +56,7 @@ describe('OpenAI-compatible grounded answer adapter', () => {
       baseUrl: 'https://llm.example/v1',
       fetcher,
     })
+
     const result = await adapter.answer({
       question: 'How do I help my team speak up?',
       retrievalResults: [evidence, unrelatedEvidence],
@@ -133,5 +135,37 @@ describe('OpenAI-compatible grounded answer adapter', () => {
     expect(called).toBe(false)
     expect(result.usedFallback).toBe(true)
     expect(result.sourceIds).toEqual([])
+  })
+})
+
+describe('local Ollama grounded answer adapter', () => {
+  it('uses the configurable local chat model without an external API key', async () => {
+    let requestUrl = ''
+    let requestBody = ''
+    const adapter = new OllamaGroundedAnswerAdapter({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama3.2:latest',
+      fetcher: async (input, init) => {
+        requestUrl = String(input)
+        requestBody = String(init?.body)
+        return Response.json(completion(JSON.stringify({
+          answer: 'Psychological safety supports speaking up.',
+          sourceIds: ['google-project-aristotle'],
+        })))
+      },
+    })
+
+    const result = await adapter.answer({
+      question: 'How does the team become comfortable speaking up?',
+      retrievalResults: [evidence],
+    })
+    const sent = JSON.parse(requestBody) as { model: string }
+
+    expect(requestUrl).toBe('http://localhost:11434/v1/chat/completions')
+    expect(sent.model).toBe('llama3.2:latest')
+    expect(result.speakableText).toBe(
+      'Psychological safety supports speaking up.',
+    )
+    expect(result.sourceIds).toEqual(['google-project-aristotle'])
   })
 })

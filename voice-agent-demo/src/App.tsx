@@ -1,4 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  createBrowserSpeechInputAdapter,
+  createBrowserSpeechOutputAdapter,
+} from './speech-adapters'
+import type {
+  SpeechInputAdapter,
+  SpeechInputError,
+  SpeechOutputAdapter,
+} from './speech-adapters'
 import './App.css'
 
 interface LearningSource {
@@ -40,14 +49,299 @@ interface GroundedAnswer {
   usedFallback: boolean
 }
 
+interface LearningSessionResponse {
+  sessionId?: string
+  error?: string
+}
+
+interface SessionTranscriptTurn {
+  question: string
+  answer: string
+  evidence: GroundedAnswer['citations']
+}
+
+interface SessionTranscriptResponse {
+  turns?: SessionTranscriptTurn[]
+  error?: string
+}
+
+interface SessionTurn {
+  id: string
+  role: 'learner' | 'agent'
+  text: string
+  citations?: GroundedAnswer['citations']
+}
+
+type VoiceStatus = 'idle' | 'listening' | 'thinking' | 'speaking' | 'ended'
+
+function speechInputErrorMessage(error: SpeechInputError): string {
+  switch (error) {
+    case 'not-supported':
+      return 'Browser speech recognition is not supported. Type your question instead.'
+    case 'permission-denied':
+      return 'Microphone permission was denied. Allow microphone access or type your question.'
+    case 'microphone-unavailable':
+      return 'No microphone is available. Connect a microphone or type your question.'
+    case 'no-speech':
+      return 'No clear speech was detected. Try again or type your question.'
+    case 'invalid-result':
+      return 'Speech recognition returned an invalid result. Please try again or type your question.'
+    case 'service-failure':
+      return 'Browser speech recognition failed. Please try again or type your question.'
+  }
+}
+
+async function fetchSessionTranscript(sessionId: string): Promise<SessionTurn[]> {
+  const response = await fetch(`/api/sessions/${sessionId}/transcript`)
+  const body = await response.json() as SessionTranscriptResponse
+  if (!response.ok || !body.turns) {
+    throw new Error(body.error ?? 'Could not load the session transcript.')
+  }
+
+  return body.turns.flatMap((turn, index) => [
+    {
+      id: `${sessionId}-${index}-learner`,
+      role: 'learner' as const,
+      text: turn.question,
+    },
+    {
+      id: `${sessionId}-${index}-agent`,
+      role: 'agent' as const,
+      text: turn.answer,
+      citations: turn.evidence,
+    },
+  ])
+}
+
 function App() {
-  const [providerRequired, setProviderRequired] = useState(false)
   const [sources, setSources] = useState<LearningSource[]>([])
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [completedTranscript, setCompletedTranscript] = useState<SessionTurn[] | null>(null)
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>('ended')
+  const [sessionStatus, setSessionStatus] = useState<
+    'ended' | 'connecting' | 'active'
+  >('ended')
+  const [sessionBusy, setSessionBusy] = useState(false)
+  const [sessionMessage, setSessionMessage] = useState('')
+  const [sessionQuestion, setSessionQuestion] = useState('')
+  const [sessionTurns, setSessionTurns] = useState<SessionTurn[]>([])
+  const [showConversation, setShowConversation] = useState(false)
   const [question, setQuestion] = useState('')
   const [retrievalResults, setRetrievalResults] = useState<RetrievalResult[]>([])
   const [retrievalMessage, setRetrievalMessage] = useState('')
   const [groundedAnswer, setGroundedAnswer] = useState<GroundedAnswer | null>(null)
   const [answerLoading, setAnswerLoading] = useState(false)
+  const speechInputRef = useRef<SpeechInputAdapter | null>(null)
+  const speechOutputRef = useRef<SpeechOutputAdapter | null>(null)
+  const voiceAttemptRef = useRef(0)
+
+  useEffect(() => {
+    speechInputRef.current = createBrowserSpeechInputAdapter()
+    speechOutputRef.current = createBrowserSpeechOutputAdapter()
+    return () => {
+      speechInputRef.current?.stop()
+      speechOutputRef.current?.stop()
+    }
+  }, [])
+
+  const startLearningSession = async () => {
+    voiceAttemptRef.current += 1
+    speechInputRef.current?.stop()
+    speechOutputRef.current?.stop()
+    setVoiceStatus('idle')
+    setSessionStatus('connecting')
+    setSessionMessage('Connecting to the learning assistant...')
+    setSessionTurns([])
+    setCompletedTranscript(null)
+    setSessionQuestion('')
+    setShowConversation(false)
+    try {
+      const response = await fetch('/api/sessions', { method: 'POST' })
+      const body = await response.json() as LearningSessionResponse
+      if (!response.ok || !body.sessionId) {
+        throw new Error(body.error ?? 'Could not start a learning session.')
+      }
+
+      setSessionId(body.sessionId)
+      setSessionStatus('active')
+      setSessionMessage('Your learning session is active.')
+    } catch (error) {
+      setSessionId(null)
+      setSessionStatus('ended')
+      setVoiceStatus('ended')
+      setSessionMessage(
+        `Error: ${error instanceof Error ? error.message : 'The session service is unavailable.'}`,
+      )
+    }
+  }
+
+  const toggleConversation = async () => {
+    if (showConversation) {
+      setShowConversation(false)
+      return
+    }
+
+    if (!sessionId) return
+    if (sessionStatus === 'ended' && completedTranscript) {
+      setSessionTurns(completedTranscript)
+      setShowConversation(true)
+      return
+    }
+
+    setSessionBusy(true)
+    setSessionMessage('Loading the saved session transcript...')
+    try {
+      setSessionTurns(await fetchSessionTranscript(sessionId))
+      setShowConversation(true)
+      setSessionMessage('Showing the saved session transcript.')
+    } catch (error) {
+      setSessionMessage(
+        `Error: ${error instanceof Error ? error.message : 'The session service is unavailable. Please try again.'}`,
+      )
+    } finally {
+      setSessionBusy(false)
+    }
+  }
+
+  const stopVoice = () => {
+    voiceAttemptRef.current += 1
+    speechInputRef.current?.stop()
+    speechOutputRef.current?.stop()
+    setVoiceStatus(sessionStatus === 'ended' ? 'ended' : 'idle')
+    setSessionMessage(
+      voiceStatus === 'thinking'
+        ? 'Voice stopped. The question is still being processed.'
+        : 'Voice interaction stopped.',
+    )
+  }
+
+  const submitSessionQuestion = async (questionText: string, voiceAttempt?: number) => {
+    if (!sessionId || !questionText || sessionBusy) return
+    setSessionBusy(true)
+    if (voiceAttempt !== undefined) setVoiceStatus('thinking')
+    setSessionMessage('Finding an answer in your approved learning material...')
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/turns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: questionText }),
+      })
+      const body = await response.json() as
+        | { answer: GroundedAnswer }
+        | { error: string }
+
+      if (!response.ok || 'error' in body) {
+        throw new Error('error' in body ? body.error : 'Could not answer that question.')
+      }
+
+      setSessionTurns((turns) => [
+        ...turns,
+        {
+          id: `${Date.now()}-learner`,
+          role: 'learner',
+          text: questionText,
+        },
+        {
+          id: `${Date.now()}-agent`,
+          role: 'agent',
+          text: body.answer.speakableText,
+          citations: body.answer.citations,
+        },
+      ])
+      setSessionQuestion('')
+      if (voiceAttempt !== undefined && voiceAttempt === voiceAttemptRef.current) {
+        setVoiceStatus('speaking')
+        try {
+          if (!speechOutputRef.current) throw new Error('Speech output is unavailable')
+          await speechOutputRef.current.speak(body.answer.speakableText)
+        } catch {
+          setVoiceStatus('idle')
+          setSessionMessage('Error: Speech playback failed. The answer is available as text.')
+          return
+        }
+        if (voiceAttempt === voiceAttemptRef.current) setVoiceStatus('idle')
+      }
+      setSessionMessage(
+        body.answer.usedFallback
+          ? 'No matching evidence was found for that question.'
+          : 'Answer ready, with its supporting source.',
+      )
+    } catch (error) {
+      setSessionMessage(
+        `Error: ${error instanceof Error ? error.message : 'The answer service is unavailable.'}`,
+      )
+      if (voiceAttempt !== undefined && voiceAttempt === voiceAttemptRef.current) {
+        setVoiceStatus('idle')
+      }
+    } finally {
+      setSessionBusy(false)
+    }
+  }
+
+  const askLearningQuestion = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const trimmedQuestion = sessionQuestion.trim()
+    if (!trimmedQuestion || sessionBusy) return
+    await submitSessionQuestion(trimmedQuestion)
+  }
+
+  const startVoiceQuestion = () => {
+    if (!sessionId || sessionStatus !== 'active' || sessionBusy) return
+
+    voiceAttemptRef.current += 1
+    const voiceAttempt = voiceAttemptRef.current
+    setVoiceStatus('listening')
+    setSessionMessage('Requesting microphone permission, then listening...')
+    try {
+      if (!speechInputRef.current) throw new Error('Speech input is unavailable')
+      speechInputRef.current.start(
+        (transcript) => {
+          if (voiceAttempt !== voiceAttemptRef.current) return
+          setSessionQuestion(transcript)
+          setVoiceStatus('thinking')
+          void submitSessionQuestion(transcript, voiceAttempt)
+        },
+        (error) => {
+          if (voiceAttempt !== voiceAttemptRef.current) return
+          setVoiceStatus('idle')
+          setSessionMessage(`Error: ${speechInputErrorMessage(error)}`)
+        },
+      )
+    } catch {
+      setVoiceStatus('idle')
+      setSessionMessage('Error: Speech input could not start. Type your question instead.')
+    }
+  }
+
+  const endLearningSession = async () => {
+    if (!sessionId || sessionBusy) return
+    voiceAttemptRef.current += 1
+    speechInputRef.current?.stop()
+    speechOutputRef.current?.stop()
+    setVoiceStatus('idle')
+    setSessionBusy(true)
+    try {
+      const transcript = await fetchSessionTranscript(sessionId)
+      const response = await fetch(`/api/sessions/${sessionId}/reset`, {
+        method: 'POST',
+      })
+      const body = await response.json() as { error?: string }
+      if (!response.ok) {
+        throw new Error(body.error ?? 'Could not end the learning session.')
+      }
+      setSessionTurns(transcript)
+      setCompletedTranscript(transcript)
+      setSessionStatus('ended')
+      setVoiceStatus('ended')
+      setSessionMessage('Learning session ended. You can still review its transcript.')
+    } catch (error) {
+      setSessionMessage(
+        `Error: ${error instanceof Error ? error.message : 'The session service is unavailable.'}`,
+      )
+    } finally {
+      setSessionBusy(false)
+    }
+  }
 
   useEffect(() => {
     void fetch('/api/sources')
@@ -133,6 +427,16 @@ function App() {
     }
   }
 
+  const voiceStatusLabel = voiceStatus === 'listening'
+    ? 'Listening'
+    : voiceStatus === 'thinking'
+      ? 'Thinking'
+      : voiceStatus === 'speaking'
+        ? 'Speaking'
+        : voiceStatus === 'ended'
+          ? 'Ended'
+          : 'Ready'
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -145,71 +449,181 @@ function App() {
 
       <section className="workspace">
         <div className="hero-copy">
-          <p className="eyebrow">AI voice agent console</p>
-          <h1>Talk to a controlled demo agent</h1>
+          <p className="eyebrow">Grounded learning assistant</p>
+          <h1>Learn by asking, one question at a time</h1>
           <p className="lede">
-            Start a browser voice session or inspect a completed conversation.
-            This foundation does not place a call or create appointments.
+            Practice leadership communication and explore topics using answers
+            grounded in the approved learning material below.
           </p>
         </div>
 
         <section className="call-card" aria-labelledby="call-heading">
           <div className="card-header">
             <div>
-              <p className="card-kicker">Demo agent</p>
-              <h2 id="call-heading">Customer FAQ assistant</h2>
+              <p className="card-kicker">Text learning session</p>
+              <h2 id="call-heading">Your learning conversation</h2>
             </div>
-            <span className="status-pill">
+            <span className={`status-pill session-state session-state-${sessionStatus}`}>
               <span className="status-dot" aria-hidden="true" />
-              Ready
+              {sessionStatus === 'connecting'
+                ? 'Connecting'
+                : sessionStatus === 'active'
+                  ? 'Active'
+                  : 'Ended'}
             </span>
           </div>
 
           <div className="call-visual" aria-hidden="true">
-            <div className="voice-orb">
-              <span />
-              <span />
-              <span />
-            </div>
+            <div className="learning-orb"><span aria-hidden="true">?</span></div>
           </div>
 
           <div className="actions">
             <button
               className="primary-button"
               type="button"
-              onClick={() => setProviderRequired(true)}
+              onClick={() => void startLearningSession()}
+              disabled={sessionStatus === 'connecting' || sessionBusy || sessionStatus === 'active'}
             >
-              <span aria-hidden="true">↗</span>
-              Make call
+              {sessionStatus === 'connecting'
+                ? 'Connecting...'
+                : sessionStatus === 'active'
+                  ? 'Session active'
+                  : sessionId
+                    ? 'Start new learning session'
+                    : 'Start learning session'}
             </button>
-            <button className="secondary-button" type="button" disabled>
-              Show conversation
-            </button>
+            {sessionStatus === 'active' && (
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => void endLearningSession()}
+                disabled={sessionBusy}
+              >
+                End session
+              </button>
+            )}
+            {sessionTurns.length > 0 && (
+              <button
+                className="secondary-button"
+                type="button"
+                aria-expanded={showConversation}
+                aria-controls="conversation-transcript"
+                onClick={() => void toggleConversation()}
+                disabled={sessionBusy}
+              >
+                {showConversation ? 'Hide conversation' : 'Show conversation'}
+              </button>
+            )}
           </div>
 
-          {providerRequired && (
-            <p className="provider-note" role="status">
-              A browser voice provider is not configured in this foundation.
-              No call was placed.
-            </p>
+          {sessionStatus === 'active' && (
+            <>
+            <form className="session-question-form" onSubmit={(event) => void askLearningQuestion(event)}>
+              <label htmlFor="session-question">Ask a learning question</label>
+              <textarea
+                id="session-question"
+                value={sessionQuestion}
+                onChange={(event) => setSessionQuestion(event.target.value)}
+                placeholder="How can I communicate a decision clearly?"
+                maxLength={1000}
+                rows={3}
+                required
+                disabled={sessionBusy}
+              />
+              <div className="session-form-footer">
+                <span>{sessionQuestion.length}/1000</span>
+                <button
+                  className="primary-button"
+                  type="submit"
+                  disabled={sessionBusy || !sessionQuestion.trim()}
+                >
+                  {sessionBusy ? 'Working...' : 'Ask question'}
+                </button>
+              </div>
+            </form>
+            <div className="voice-controls">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={startVoiceQuestion}
+                disabled={sessionBusy || voiceStatus !== 'idle'}
+              >
+                {voiceStatus === 'listening' ? 'Listening...' : 'Ask by voice'}
+              </button>
+              {voiceStatus !== 'idle' && voiceStatus !== 'ended' && (
+                <button className="secondary-button" type="button" onClick={stopVoice}>
+                  Stop voice
+                </button>
+              )}
+            </div>
+            </>
+          )}
+
+          <p className={`voice-status voice-status-${voiceStatus}`} role="status" aria-live="polite">
+            Voice: {voiceStatusLabel}
+            {voiceStatus === 'listening' && ' · Microphone permission may be requested'}
+          </p>
+
+          <p
+            className="session-message"
+            role={sessionMessage.startsWith('Error:') ? 'alert' : 'status'}
+            aria-live={sessionMessage.startsWith('Error:') ? 'assertive' : 'polite'}
+          >
+            {sessionMessage}
+          </p>
+
+          {showConversation && (
+            <section
+              className="conversation-transcript"
+              id="conversation-transcript"
+              aria-labelledby="transcript-heading"
+            >
+              <div className="transcript-header">
+                <div>
+                  <p className="card-kicker">Session transcript</p>
+                  <h3 id="transcript-heading">
+                    {sessionStatus === 'active' ? 'Conversation so far' : 'Completed conversation'}
+                  </h3>
+                </div>
+                <span>{sessionTurns.length / 2} turns</span>
+              </div>
+              <ol className="transcript-turns" aria-label="Conversation transcript">
+                {sessionTurns.map((turn) => (
+                  <li className={`transcript-turn transcript-turn-${turn.role}`} key={turn.id}>
+                    <p className="turn-speaker">
+                      {turn.role === 'learner' ? 'You' : 'Learning assistant'}
+                    </p>
+                    <p className="turn-text">{turn.text}</p>
+                    {turn.citations?.map((citation) => (
+                      <article className="turn-citation" key={citation.chunkId}>
+                        <a href={citation.url} target="_blank" rel="noreferrer">
+                          {citation.sourceTitle}
+                        </a>
+                        <blockquote>{citation.excerpt}</blockquote>
+                      </article>
+                    ))}
+                  </li>
+                ))}
+              </ol>
+            </section>
           )}
         </section>
 
         <section className="capability-grid" aria-label="Demo capabilities">
           <article>
             <span className="capability-number">01</span>
-            <h3>Controlled answers</h3>
-            <p>Opening hours, location, and support FAQs use synthetic data.</p>
+            <h3>Source-grounded</h3>
+            <p>Answers use retrieved excerpts and show where the information came from.</p>
           </article>
           <article>
             <span className="capability-number">02</span>
-            <h3>Traceable turns</h3>
-            <p>Future call sessions will keep caller and agent turns together.</p>
+            <h3>Follow-up questions</h3>
+            <p>Recent evidence-backed context stays within your learning session.</p>
           </article>
           <article>
             <span className="capability-number">03</span>
-            <h3>No live side effects</h3>
-            <p>The foundation does not authenticate or create appointments.</p>
+            <h3>Browser voice</h3>
+            <p>Speak a question and hear the grounded answer using your browser’s speech tools.</p>
           </article>
         </section>
 

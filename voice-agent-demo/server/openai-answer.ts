@@ -232,12 +232,41 @@ export class OpenAICompatibleGroundedAnswerAdapter
   }
 }
 
+export class OllamaGroundedAnswerAdapter
+  extends OpenAICompatibleGroundedAnswerAdapter
+{
+  constructor(options: { baseUrl: string; model: string; fetcher?: typeof fetch }) {
+    const baseUrl = new URL(options.baseUrl)
+    if (
+      baseUrl.protocol !== 'http:' ||
+      !['localhost', '127.0.0.1', '::1', 'host.docker.internal'].includes(baseUrl.hostname)
+    ) {
+      throw new Error(
+        'OLLAMA_BASE_URL must use HTTP on localhost or host.docker.internal',
+      )
+    }
+
+    super({
+      apiKey: 'local-ollama',
+      model: options.model,
+      baseUrl: `${baseUrl.origin}/v1`,
+      fetcher: options.fetcher,
+    })
+  }
+}
+
 export function createGroundedAnswerAdapter(
   environment: Record<string, string | undefined> = process.env,
 ): GroundedAnswerAdapter {
-  const provider = environment.ANSWER_PROVIDER ?? 'deterministic'
+  const provider = environment.ANSWER_PROVIDER ?? 'ollama'
   if (provider === 'deterministic') {
     return new DeterministicGroundedAnswerAdapter()
+  }
+  if (provider === 'ollama') {
+    return new OllamaGroundedAnswerAdapter({
+      baseUrl: environment.OLLAMA_BASE_URL ?? 'http://localhost:11434',
+      model: environment.OLLAMA_CHAT_MODEL ?? 'llama3.2:latest',
+    })
   }
   if (provider !== 'openai-compatible') {
     throw new Error(`Unsupported ANSWER_PROVIDER: ${provider}`)

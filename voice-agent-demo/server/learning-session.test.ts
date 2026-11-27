@@ -6,6 +6,22 @@ import type {
   GroundedAnswerRequest,
   GroundedAnswerResult,
 } from './grounded-answer.js'
+import { DeterministicGroundedAnswerAdapter } from './grounded-answer.js'
+import { LexicalRetriever } from './retrieval.js'
+import {
+  InMemorySourceStore,
+  ingestLeadershipSources,
+} from './source-ingestion.js'
+
+function buildTestApp(options: Parameters<typeof buildApp>[0] = {}) {
+  const sourceStore = new InMemorySourceStore()
+  ingestLeadershipSources(sourceStore)
+  return buildApp({
+    ...options,
+    retriever: new LexicalRetriever(sourceStore),
+    answerAdapter: options.answerAdapter ?? new DeterministicGroundedAnswerAdapter(),
+  })
+}
 
 function createRecordingAdapter() {
   const requests: GroundedAnswerRequest[] = []
@@ -55,7 +71,7 @@ async function sendTurn(
 describe('text learning sessions API', () => {
   it('creates an opaque session and returns the grounded answer contract for a turn', async () => {
     const { adapter } = createRecordingAdapter()
-    const app = buildApp({ answerAdapter: adapter })
+    const app = buildTestApp({ answerAdapter: adapter })
     const sessionId = await createSession(app)
 
     expect(sessionId).toMatch(/^[0-9a-f-]{36}$/i)
@@ -81,7 +97,7 @@ describe('text learning sessions API', () => {
 
   it('uses only recent retrieved context for follow-up turns', async () => {
     const { adapter, requests } = createRecordingAdapter()
-    const app = buildApp({ answerAdapter: adapter })
+    const app = buildTestApp({ answerAdapter: adapter })
     const sessionId = await createSession(app)
 
     await sendTurn(app, sessionId, 'How does psychological safety help a team?')
@@ -100,9 +116,37 @@ describe('text learning sessions API', () => {
     await app.close()
   })
 
+  it('returns the saved transcript and evidence for a session', async () => {
+    const app = buildTestApp()
+    const sessionId = await createSession(app)
+    const question = 'How does psychological safety help a team?'
+    await sendTurn(app, sessionId, question)
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/sessions/${sessionId}/transcript`,
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({
+      sessionId,
+      turns: [{
+        question,
+        answer: expect.any(String),
+        evidence: [{
+          sourceId: 'google-project-aristotle',
+          sourceTitle: 'Google re:Work — The Five Keys to a Successful Team',
+          excerpt: expect.stringContaining('Psychological safety'),
+        }],
+      }],
+    })
+
+    await app.close()
+  })
+
   it('does not share context between sessions and reset clears prior context', async () => {
     const { adapter, requests } = createRecordingAdapter()
-    const app = buildApp({ answerAdapter: adapter })
+    const app = buildTestApp({ answerAdapter: adapter })
     const firstSessionId = await createSession(app)
     const secondSessionId = await createSession(app)
 
@@ -127,7 +171,7 @@ describe('text learning sessions API', () => {
   })
 
   it('rejects empty, non-string, and overlong questions', async () => {
-    const app = buildApp()
+    const app = buildTestApp()
     const sessionId = await createSession(app)
 
     for (const question of ['', '   ', null, 'x'.repeat(1001)]) {
@@ -139,7 +183,7 @@ describe('text learning sessions API', () => {
   })
 
   it('rejects turns for unknown sessions', async () => {
-    const app = buildApp()
+    const app = buildTestApp()
     const missingResponse = await sendTurn(
       app,
       '00000000-0000-4000-8000-000000000000',
@@ -151,7 +195,7 @@ describe('text learning sessions API', () => {
   })
 
   it('uses the standard fallback for questions without evidence', async () => {
-    const app = buildApp()
+    const app = buildTestApp()
     const sessionId = await createSession(app)
 
     const response = await sendTurn(app, sessionId, 'How do I tune a carburetor?')
@@ -192,7 +236,7 @@ describe('text learning sessions API', () => {
         }
       },
     }
-    const app = buildApp({ answerAdapter })
+    const app = buildTestApp({ answerAdapter })
     const sessionId = await createSession(app)
 
     const response = await sendTurn(

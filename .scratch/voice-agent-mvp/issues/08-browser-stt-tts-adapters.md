@@ -5,15 +5,14 @@ and continue within the browser session.
 
 **Blocked by:** 07: Connect browser learning UI to the API.
 
-**Status:** ready-for-agent
+**Status:** implemented (manual microphone check pending)
 
-- [ ] Microphone permission, listening, thinking, speaking, and ended states
+- [x] Microphone permission, listening, thinking, speaking, and ended states
       are explicit.
-- [ ] STT and TTS implementations are replaceable adapters.
-- [ ] STT text enters the same learning-session API used by typed questions.
-- [ ] TTS receives short, speakable grounded text and never reads raw URLs.
-- [ ] STT/provider failures do not expose secrets or invent answers.
-- [ ] STT fixture tests cover silence, noise, accents, interruption, and
+- [x] STT and TTS implementations are replaceable adapters.
+- [x] STT text enters the same learning-session API used by typed questions.
+- [x] TTS receives short, speakable grounded text and never reads raw URLs.
+- [x] STT/provider failures do not expose secrets or invent answers.
+- [x] STT fixture tests cover silence, noise, accents, interruption, and
       malformed results.
 - [ ] A manual browser-microphone check exercises one known-answer question.
-
